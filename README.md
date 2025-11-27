@@ -2,7 +2,7 @@
 
 A colorful, interactive typing visualizer for kids. Type anything and watch the screen come alive with beautiful animations!
 
-My son always wants to 'help' with Dada's Work and type on the computer.  I pull this up and let him go to town!
+My kid always wants to 'help' with Dada's Work and type on the computer.  I pull this up and let him go to town!
 
 ## Demo
 

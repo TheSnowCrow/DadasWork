@@ -17,7 +17,7 @@
 
         html, body {
             overflow: hidden;
-            touch-action: manipulation;
+            touch-action: none;
             height: 100%;
             width: 100%;
             position: fixed;
@@ -42,7 +42,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 30vh;
+            height: 25vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -86,41 +86,48 @@
 
         #mode-buttons {
             position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 8px;
+            left: 0;
+            right: 0;
             z-index: 20;
             display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
+            gap: 3px;
             justify-content: center;
-            max-width: 98%;
-            padding: 5px;
+            padding: 0 5px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        #mode-buttons::-webkit-scrollbar {
+            display: none;
         }
 
         .mode-btn {
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 15px;
-            padding: 6px 10px;
+            border-radius: 12px;
+            padding: 5px 7px;
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             transition: all 0.2s ease;
             font-family: inherit;
             -webkit-user-select: none;
             user-select: none;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .mode-btn:hover, .mode-btn:active {
             background: rgba(255,255,255,0.35);
-            transform: scale(1.05);
         }
 
         .mode-btn.active {
             background: rgba(255,255,255,0.4);
             border-color: rgba(255,255,255,0.8);
-            box-shadow: 0 0 15px rgba(255,255,255,0.3);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
 
         .letter-pop {
@@ -134,32 +141,104 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Mobile keyboard input - hidden but functional */
+        /* Hidden text input for mobile keyboard */
         #mobile-input {
+            position: fixed;
+            top: -100px;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+
+        /* Keyboard toggle button for adults */
+        #keyboard-toggle {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 25;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: rgba(255,255,255,0.6);
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+            display: none;
+        }
+
+        #keyboard-toggle:active {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Trace letter overlay for mobile */
+        #trace-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 70%;
-            z-index: 5;
-            opacity: 0;
-            cursor: pointer;
+            height: 100%;
+            z-index: 15;
+            display: none;
+            pointer-events: none;
         }
 
-        @media (min-width: 600px) {
+        #trace-letter {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            font-size: 50vw;
+            font-weight: bold;
+            color: transparent;
+            -webkit-text-stroke: 3px rgba(255,255,255,0.25);
+            text-stroke: 3px rgba(255,255,255,0.25);
+            pointer-events: none;
+            font-family: Arial, sans-serif;
+        }
+
+        #trace-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 16;
+            display: none;
+        }
+
+        #trace-hint {
+            position: fixed;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            z-index: 17;
+            display: none;
+            text-align: center;
+        }
+
+        @media (min-width: 700px) {
             .mode-btn {
-                padding: 8px 14px;
-                font-size: 14px;
-                border-radius: 20px;
+                padding: 6px 12px;
+                font-size: 13px;
+                border-radius: 15px;
             }
             
             #mode-buttons {
-                gap: 8px;
-                top: 15px;
+                gap: 6px;
+                top: 12px;
             }
             
             #typed-text {
                 font-size: clamp(48px, 12vw, 150px);
+            }
+
+            #trace-letter {
+                font-size: 40vw;
+                -webkit-text-stroke: 4px rgba(255,255,255,0.25);
             }
         }
     </style>
@@ -167,6 +246,7 @@
 <body>
     <canvas id="canvas"></canvas>
     <input type="text" id="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Type here">
+    
     <div id="mode-buttons">
         <button class="mode-btn active" data-mode="1">Waves</button>
         <button class="mode-btn" data-mode="2">Stars</button>
@@ -179,6 +259,15 @@
         <button class="mode-btn" data-mode="9">Fireworks</button>
         <button class="mode-btn" data-mode="10">Worms</button>
     </div>
+
+    <div id="trace-overlay">
+        <div id="trace-letter">A</div>
+    </div>
+    <canvas id="trace-canvas"></canvas>
+    <div id="trace-hint">Trace the letter with your finger!</div>
+
+    <button id="keyboard-toggle">Keyboard</button>
+
     <div id="text-display">
         <div id="typed-text"></div>
     </div>
@@ -188,6 +277,13 @@
         const ctx = canvas.getContext('2d');
         const textDisplay = document.getElementById('typed-text');
         const modeButtons = document.querySelectorAll('.mode-btn');
+        const mobileInput = document.getElementById('mobile-input');
+        const keyboardToggle = document.getElementById('keyboard-toggle');
+        const traceOverlay = document.getElementById('trace-overlay');
+        const traceLetter = document.getElementById('trace-letter');
+        const traceCanvas = document.getElementById('trace-canvas');
+        const traceHint = document.getElementById('trace-hint');
+        const traceCtx = traceCanvas.getContext('2d');
 
         let width, height;
         let time = 0;
@@ -197,8 +293,36 @@
         let hueBase = 0;
         let particles = [];
         let currentMode = 1;
+        let isMobile = false;
+        let keyboardVisible = false;
 
-        // ============== PARTICLE SYSTEM ==============
+        // Tracing variables
+        let isTracing = false;
+        let lastTraceX = 0;
+        let lastTraceY = 0;
+        let currentTraceLetter = 'A';
+        const traceLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
+        let shuffledLetters = [];
+        let letterIndex = 0;
+
+        function shuffleLetters() {
+            shuffledLetters = [...traceLetters].sort(() => Math.random() - 0.5);
+            letterIndex = 0;
+        }
+
+        function getNextLetter() {
+            if (letterIndex >= shuffledLetters.length) {
+                shuffleLetters();
+            }
+            return shuffledLetters[letterIndex++];
+        }
+
+        function showNextTraceLetter() {
+            currentTraceLetter = getNextLetter();
+            traceLetter.textContent = currentTraceLetter;
+            traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+        }
+
         class Particle {
             constructor(x, y, hue, config = {}) {
                 this.x = x;
@@ -232,30 +356,28 @@
             }
         }
 
-        // ============== MODE 1: OCEAN WAVES ==============
+        // MODE 1: OCEAN WAVES
         function drawOceanWaves() {
-            // Slow color shift based on time only (not keystrokes)
             const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-            const hue1 = (time * 10) % 360;
+            const hue1 = (time * 5) % 360;
             bgGrad.addColorStop(0, `hsl(${(hue1 + 200) % 360}, 60%, 8%)`);
             bgGrad.addColorStop(0.5, `hsl(${(hue1 + 220) % 360}, 50%, 12%)`);
             bgGrad.addColorStop(1, `hsl(${(hue1 + 240) % 360}, 60%, 6%)`);
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, width, height);
 
-            // Aurora
             for (let layer = 0; layer < 3; layer++) {
                 ctx.beginPath();
                 const auroraY = height * 0.15;
                 const points = [];
+                const baseSpeed = 0.2 + energy * 0.5;
                 for (let i = 0; i <= 80; i++) {
                     const x = (i / 80) * width;
-                    const waviness = Math.sin(i * 0.1 + time * 0.5 + layer) * 30 +
-                                    Math.sin(i * 0.05 + time * 0.3) * 50 +
+                    const waviness = Math.sin(i * 0.1 + time * baseSpeed + layer) * 30 +
+                                    Math.sin(i * 0.05 + time * baseSpeed * 0.6) * 50 +
                                     energy * Math.sin(i * 0.2 + time) * 40;
                     points.push({ x, y: auroraY + layer * 40 + waviness });
                 }
-                
                 ctx.moveTo(points[0].x, points[0].y);
                 for (let i = 1; i < points.length - 1; i++) {
                     const xc = (points[i].x + points[i + 1].x) / 2;
@@ -265,8 +387,7 @@
                 ctx.lineTo(width, height * 0.5);
                 ctx.lineTo(0, height * 0.5);
                 ctx.closePath();
-                
-                const hue = (time * 15 + layer * 60 + 120) % 360;
+                const hue = (time * 8 + layer * 60 + 120) % 360;
                 const gradient = ctx.createLinearGradient(0, auroraY - 50, 0, height * 0.5);
                 gradient.addColorStop(0, `hsla(${hue}, 80%, 60%, ${0.15 + energy * 0.1})`);
                 gradient.addColorStop(1, 'transparent');
@@ -274,27 +395,23 @@
                 ctx.fill();
             }
 
-            // Waves
             const waveCount = Math.floor(3 + energy * 5);
             for (let w = 0; w < waveCount; w++) {
                 ctx.beginPath();
-                const hue = (time * 20 + w * 40) % 360;
+                const hue = (time * 10 + w * 40) % 360;
                 const yOffset = height * 0.35 + w * 50;
-                const amplitude = 30 + energy * 50 + w * 10;
+                const amplitude = 20 + energy * 60 + w * 10;
                 const frequency = 0.003 + w * 0.001;
-                const speed = 0.5 + w * 0.2;
-                
+                const speed = (0.2 + energy * 0.5) + w * 0.1;
                 ctx.moveTo(0, yOffset);
                 for (let x = 0; x <= width; x += 3) {
-                    const y = yOffset + 
-                        Math.sin(x * frequency + time * speed) * amplitude +
+                    const y = yOffset + Math.sin(x * frequency + time * speed) * amplitude +
                         Math.sin(x * frequency * 2.5 + time * speed * 1.5) * amplitude * 0.5;
                     ctx.lineTo(x, y);
                 }
                 ctx.lineTo(width, height);
                 ctx.lineTo(0, height);
                 ctx.closePath();
-                
                 const gradient = ctx.createLinearGradient(0, yOffset - amplitude, 0, height);
                 gradient.addColorStop(0, `hsla(${hue}, 80%, 50%, ${0.3 - w * 0.04})`);
                 gradient.addColorStop(1, `hsla(${hue + 60}, 60%, 20%, 0.1)`);
@@ -302,13 +419,12 @@
                 ctx.fill();
             }
 
-            // Floating orbs
-            for (let i = 0; i < 5 + energy * 5; i++) {
-                const x = width * 0.5 + Math.sin(time * 0.3 + i * 1.3) * (200 + energy * 100);
-                const y = height * 0.35 + Math.cos(time * 0.4 + i * 1.7) * (100 + energy * 50);
-                const size = 40 + Math.sin(time + i) * 20 + energy * 30;
-                const hue = (time * 30 + i * 50) % 360;
-                
+            for (let i = 0; i < 3 + energy * 5; i++) {
+                const orbSpeed = 0.15 + energy * 0.3;
+                const x = width * 0.5 + Math.sin(time * orbSpeed + i * 1.3) * (200 + energy * 100);
+                const y = height * 0.35 + Math.cos(time * orbSpeed * 1.3 + i * 1.7) * (100 + energy * 50);
+                const size = 30 + Math.sin(time * 0.5 + i) * 20 + energy * 30;
+                const hue = (time * 15 + i * 50) % 360;
                 const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
                 gradient.addColorStop(0, `hsla(${hue}, 100%, 80%, 0.8)`);
                 gradient.addColorStop(0.5, `hsla(${hue + 20}, 100%, 60%, 0.3)`);
@@ -320,7 +436,7 @@
             }
         }
 
-        // ============== MODE 2: STARFIELD ==============
+        // MODE 2: STARFIELD
         let stars = [];
         function initStars() {
             stars = [];
@@ -337,13 +453,12 @@
         function drawStarfield() {
             ctx.fillStyle = '#000010';
             ctx.fillRect(0, 0, width, height);
-            
             for (let i = 0; i < 3; i++) {
-                const x = width * 0.3 + Math.sin(time * 0.1 + i * 2) * width * 0.3;
-                const y = height * 0.3 + Math.cos(time * 0.15 + i * 2) * height * 0.2;
-                const size = 200 + energy * 150 + Math.sin(time + i) * 50;
+                const nebulaSpeed = 0.05 + energy * 0.1;
+                const x = width * 0.3 + Math.sin(time * nebulaSpeed + i * 2) * width * 0.3;
+                const y = height * 0.3 + Math.cos(time * nebulaSpeed * 1.5 + i * 2) * height * 0.2;
+                const size = 200 + energy * 150 + Math.sin(time * 0.5 + i) * 50;
                 const hue = (hueBase + i * 80) % 360;
-                
                 const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
                 gradient.addColorStop(0, `hsla(${hue}, 80%, 50%, ${0.15 + energy * 0.1})`);
                 gradient.addColorStop(0.5, `hsla(${hue + 40}, 70%, 30%, 0.08)`);
@@ -351,855 +466,330 @@
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, width, height);
             }
-
-            const speed = 2 + energy * 15;
-            const centerX = width / 2;
-            const centerY = height / 2;
-            
+            const speed = 0.5 + energy * 15;
+            const centerX = width / 2, centerY = height / 2;
             stars.forEach(star => {
                 star.z -= speed;
-                if (star.z <= 0) {
-                    star.z = 1000;
-                    star.x = Math.random() * width - width / 2;
-                    star.y = Math.random() * height - height / 2;
-                }
-                
-                const sx = (star.x / star.z) * 500 + centerX;
-                const sy = (star.y / star.z) * 500 + centerY;
+                if (star.z <= 0) { star.z = 1000; star.x = Math.random() * width - width / 2; star.y = Math.random() * height - height / 2; }
+                const sx = (star.x / star.z) * 500 + centerX, sy = (star.y / star.z) * 500 + centerY;
                 const size = (1 - star.z / 1000) * 4 * star.size;
-                
                 if (sx >= 0 && sx <= width && sy >= 0 && sy <= height) {
                     const brightness = 1 - star.z / 1000;
                     const hue = (hueBase + star.z * 0.1) % 360;
-                    
                     const prevZ = star.z + speed;
-                    const psx = (star.x / prevZ) * 500 + centerX;
-                    const psy = (star.y / prevZ) * 500 + centerY;
-                    
-                    ctx.beginPath();
-                    ctx.strokeStyle = `hsla(${hue}, 80%, 80%, ${brightness * 0.5})`;
-                    ctx.lineWidth = size * 0.5;
-                    ctx.moveTo(psx, psy);
-                    ctx.lineTo(sx, sy);
-                    ctx.stroke();
-                    
-                    ctx.beginPath();
-                    ctx.fillStyle = `hsla(${hue}, 60%, 90%, ${brightness})`;
-                    ctx.arc(sx, sy, size, 0, Math.PI * 2);
-                    ctx.fill();
+                    const psx = (star.x / prevZ) * 500 + centerX, psy = (star.y / prevZ) * 500 + centerY;
+                    ctx.beginPath(); ctx.strokeStyle = `hsla(${hue}, 80%, 80%, ${brightness * 0.5})`; ctx.lineWidth = size * 0.5;
+                    ctx.moveTo(psx, psy); ctx.lineTo(sx, sy); ctx.stroke();
+                    ctx.beginPath(); ctx.fillStyle = `hsla(${hue}, 60%, 90%, ${brightness})`; ctx.arc(sx, sy, size, 0, Math.PI * 2); ctx.fill();
                 }
             });
         }
 
-        // ============== MODE 3: BUBBLES ==============
+        // MODE 3: BUBBLES
         let bubbles = [];
-        function initBubbles() {
-            bubbles = [];
-            for (let i = 0; i < 30; i++) {
-                bubbles.push(createBubble());
-            }
-        }
-
-        function createBubble() {
-            return {
-                x: Math.random() * width,
-                y: height + Math.random() * 100,
-                size: Math.random() * 60 + 20,
-                speed: Math.random() * 1 + 0.5,
-                wobble: Math.random() * Math.PI * 2,
-                wobbleSpeed: Math.random() * 0.02 + 0.01,
-                hue: Math.random() * 360
-            };
-        }
+        function initBubbles() { bubbles = []; for (let i = 0; i < 30; i++) bubbles.push(createBubble()); }
+        function createBubble() { return { x: Math.random() * width, y: height + Math.random() * 100, size: Math.random() * 60 + 20, speed: Math.random() * 0.3 + 0.2, wobble: Math.random() * Math.PI * 2, wobbleSpeed: Math.random() * 0.01 + 0.005, hue: Math.random() * 360 }; }
 
         function drawBubbles() {
             const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
             const hue1 = (hueBase + 180) % 360;
-            bgGrad.addColorStop(0, `hsl(${hue1}, 50%, 15%)`);
-            bgGrad.addColorStop(1, `hsl(${(hue1 + 40) % 360}, 60%, 8%)`);
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, width, height);
-
+            bgGrad.addColorStop(0, `hsl(${hue1}, 50%, 15%)`); bgGrad.addColorStop(1, `hsl(${(hue1 + 40) % 360}, 60%, 8%)`);
+            ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, width, height);
             for (let i = 0; i < 5; i++) {
-                const x = width * 0.5 + Math.sin(time * 0.5 + i) * width * 0.4;
-                const y = height * 0.3 + Math.cos(time * 0.4 + i * 1.5) * height * 0.2;
-                const size = 150 + Math.sin(time * 2 + i) * 50;
-                
+                const causticSpeed = 0.2 + energy * 0.4;
+                const x = width * 0.5 + Math.sin(time * causticSpeed + i) * width * 0.4;
+                const y = height * 0.3 + Math.cos(time * causticSpeed * 0.8 + i * 1.5) * height * 0.2;
+                const size = 150 + Math.sin(time + i) * 50;
                 const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-                gradient.addColorStop(0, `hsla(${(hueBase + 180) % 360}, 60%, 70%, 0.1)`);
-                gradient.addColorStop(1, 'transparent');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, width, height);
+                gradient.addColorStop(0, `hsla(${(hueBase + 180) % 360}, 60%, 70%, 0.1)`); gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height);
             }
-
-            const speedMultiplier = 1 + energy * 3;
-            
+            const speedMultiplier = 0.5 + energy * 3;
             bubbles.forEach(bubble => {
-                bubble.y -= bubble.speed * speedMultiplier;
-                bubble.wobble += bubble.wobbleSpeed;
-                bubble.x += Math.sin(bubble.wobble) * 1.5;
-                
-                if (bubble.y < -bubble.size * 2) {
-                    Object.assign(bubble, createBubble());
-                    bubble.hue = hueBase + Math.random() * 60;
-                }
-                
-                const gradient = ctx.createRadialGradient(
-                    bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, 0,
-                    bubble.x, bubble.y, bubble.size
-                );
-                const hue = (bubble.hue + time * 10) % 360;
-                gradient.addColorStop(0, `hsla(${hue}, 80%, 90%, 0.4)`);
-                gradient.addColorStop(0.5, `hsla(${hue}, 70%, 60%, 0.2)`);
-                gradient.addColorStop(1, `hsla(${hue}, 50%, 40%, 0.05)`);
-                
-                ctx.beginPath();
-                ctx.fillStyle = gradient;
-                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Highlight
-                const highlightGrad = ctx.createRadialGradient(
-                    bubble.x - bubble.size * 0.4, bubble.y - bubble.size * 0.4, 0,
-                    bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.4
-                );
-                highlightGrad.addColorStop(0, 'rgba(255,255,255,0.8)');
-                highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
-                ctx.beginPath();
-                ctx.fillStyle = highlightGrad;
-                ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.35, 0, Math.PI * 2);
-                ctx.fill();
+                bubble.y -= bubble.speed * speedMultiplier; bubble.wobble += bubble.wobbleSpeed * (1 + energy * 2); bubble.x += Math.sin(bubble.wobble) * 1;
+                if (bubble.y < -bubble.size * 2) { Object.assign(bubble, createBubble()); bubble.hue = hueBase + Math.random() * 60; }
+                const gradient = ctx.createRadialGradient(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, 0, bubble.x, bubble.y, bubble.size);
+                const hue = (bubble.hue + time * 5) % 360;
+                gradient.addColorStop(0, `hsla(${hue}, 80%, 90%, 0.4)`); gradient.addColorStop(0.5, `hsla(${hue}, 70%, 60%, 0.2)`); gradient.addColorStop(1, `hsla(${hue}, 50%, 40%, 0.05)`);
+                ctx.beginPath(); ctx.fillStyle = gradient; ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2); ctx.fill();
+                const highlightGrad = ctx.createRadialGradient(bubble.x - bubble.size * 0.4, bubble.y - bubble.size * 0.4, 0, bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.4);
+                highlightGrad.addColorStop(0, 'rgba(255,255,255,0.8)'); highlightGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.beginPath(); ctx.fillStyle = highlightGrad; ctx.arc(bubble.x - bubble.size * 0.3, bubble.y - bubble.size * 0.3, bubble.size * 0.35, 0, Math.PI * 2); ctx.fill();
             });
-
-            if (energy > 0.3 && bubbles.length < 60) {
-                bubbles.push(createBubble());
-            }
+            if (energy > 0.3 && bubbles.length < 60) bubbles.push(createBubble());
         }
 
-        // ============== MODE 4: FIRE ==============
+        // MODE 4: FIRE
         let fireParticles = [];
-        
         function drawFire() {
-            ctx.fillStyle = 'rgba(10, 5, 0, 0.3)';
-            ctx.fillRect(0, 0, width, height);
-            
-            const spawnRate = 3 + energy * 10;
+            ctx.fillStyle = 'rgba(10, 5, 0, 0.3)'; ctx.fillRect(0, 0, width, height);
+            const spawnRate = 1 + energy * 12;
             for (let i = 0; i < spawnRate; i++) {
-                const x = width * 0.5 + (Math.random() - 0.5) * (200 + energy * 300);
-                fireParticles.push({
-                    x: x, y: height * 0.65,
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: -Math.random() * 3 - 2 - energy * 3,
-                    size: Math.random() * 40 + 20 + energy * 30,
-                    life: 1,
-                    decay: 0.01 + Math.random() * 0.01
-                });
+                const x = width * 0.5 + (Math.random() - 0.5) * (150 + energy * 350);
+                fireParticles.push({ x: x, y: height * 0.65, vx: (Math.random() - 0.5) * 1.5, vy: -Math.random() * 1.5 - 1 - energy * 4, size: Math.random() * 30 + 15 + energy * 35, life: 1, decay: 0.008 + Math.random() * 0.008 });
             }
-            
             fireParticles = fireParticles.filter(p => p.life > 0);
-            
             fireParticles.forEach(p => {
-                p.x += p.vx + Math.sin(time * 10 + p.y * 0.05) * 0.5;
-                p.y += p.vy;
-                p.vy *= 0.99;
-                p.life -= p.decay;
-                p.size *= 0.98;
-                
+                p.x += p.vx + Math.sin(time * 5 + p.y * 0.05) * 0.3; p.y += p.vy; p.vy *= 0.99; p.life -= p.decay; p.size *= 0.98;
                 let hue, lightness;
-                if (p.life > 0.7) {
-                    hue = 45 + (hueBase * 0.1);
-                    lightness = 70 + (p.life - 0.7) * 100;
-                } else if (p.life > 0.4) {
-                    hue = 30 + (hueBase * 0.1);
-                    lightness = 50;
-                } else {
-                    hue = 10 + (hueBase * 0.1);
-                    lightness = 30 + p.life * 30;
-                }
-                
+                if (p.life > 0.7) { hue = 45 + (hueBase * 0.1); lightness = 70 + (p.life - 0.7) * 100; }
+                else if (p.life > 0.4) { hue = 30 + (hueBase * 0.1); lightness = 50; }
+                else { hue = 10 + (hueBase * 0.1); lightness = 30 + p.life * 30; }
                 const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-                gradient.addColorStop(0, `hsla(${hue}, 100%, ${lightness}%, ${p.life})`);
-                gradient.addColorStop(0.4, `hsla(${hue - 15}, 100%, ${lightness * 0.7}%, ${p.life * 0.6})`);
-                gradient.addColorStop(1, 'transparent');
-                
-                ctx.beginPath();
-                ctx.fillStyle = gradient;
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
+                gradient.addColorStop(0, `hsla(${hue}, 100%, ${lightness}%, ${p.life})`); gradient.addColorStop(0.4, `hsla(${hue - 15}, 100%, ${lightness * 0.7}%, ${p.life * 0.6})`); gradient.addColorStop(1, 'transparent');
+                ctx.beginPath(); ctx.fillStyle = gradient; ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
             });
-            
-            const baseGlow = ctx.createRadialGradient(width / 2, height * 0.7, 0, width / 2, height * 0.7, 300 + energy * 200);
-            baseGlow.addColorStop(0, `hsla(${30 + hueBase * 0.1}, 100%, 50%, 0.3)`);
-            baseGlow.addColorStop(0.5, `hsla(${15 + hueBase * 0.1}, 100%, 30%, 0.1)`);
-            baseGlow.addColorStop(1, 'transparent');
-            ctx.fillStyle = baseGlow;
-            ctx.fillRect(0, 0, width, height);
+            const baseGlow = ctx.createRadialGradient(width / 2, height * 0.7, 0, width / 2, height * 0.7, 200 + energy * 250);
+            baseGlow.addColorStop(0, `hsla(${30 + hueBase * 0.1}, 100%, 50%, ${0.2 + energy * 0.2})`); baseGlow.addColorStop(0.5, `hsla(${15 + hueBase * 0.1}, 100%, 30%, 0.1)`); baseGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = baseGlow; ctx.fillRect(0, 0, width, height);
         }
 
-        // ============== MODE 5: RAINBOW SPIRAL ==============
+        // MODE 5: RAINBOW SPIRAL
         function drawRainbowSpiral() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(0, 0, width, height);
-            
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const maxRadius = Math.min(width, height) * 0.45;
-            const arms = 5 + Math.floor(energy * 3);
-            const rotationSpeed = time * (0.5 + energy);
-            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, width, height);
+            const centerX = width / 2, centerY = height / 2, maxRadius = Math.min(width, height) * 0.45;
+            const arms = 4 + Math.floor(energy * 4), rotationSpeed = time * (0.2 + energy * 0.8);
             for (let arm = 0; arm < arms; arm++) {
                 const armOffset = (arm / arms) * Math.PI * 2;
                 ctx.beginPath();
                 for (let i = 0; i < 200; i++) {
-                    const t = i / 200;
-                    const angle = t * Math.PI * 6 + armOffset + rotationSpeed;
-                    const radius = t * maxRadius * (0.8 + energy * 0.4);
-                    const x = centerX + Math.cos(angle) * radius;
-                    const y = centerY + Math.sin(angle) * radius;
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
+                    const t = i / 200, angle = t * Math.PI * 6 + armOffset + rotationSpeed, radius = t * maxRadius * (0.7 + energy * 0.5);
+                    const x = centerX + Math.cos(angle) * radius, y = centerY + Math.sin(angle) * radius;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 }
-                const hue = (hueBase + arm * (360 / arms) + time * 50) % 360;
-                ctx.strokeStyle = `hsla(${hue}, 100%, 60%, ${0.6 + energy * 0.3})`;
-                ctx.lineWidth = 3 + energy * 5;
-                ctx.lineCap = 'round';
-                ctx.stroke();
+                const hue = (hueBase + arm * (360 / arms) + time * 25) % 360;
+                ctx.strokeStyle = `hsla(${hue}, 100%, 60%, ${0.5 + energy * 0.4})`; ctx.lineWidth = 2 + energy * 6; ctx.lineCap = 'round'; ctx.stroke();
             }
-            
-            const centerGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 100 + energy * 100);
-            centerGlow.addColorStop(0, `hsla(${hueBase}, 100%, 90%, ${0.8 + energy * 0.2})`);
-            centerGlow.addColorStop(0.3, `hsla(${(hueBase + 60) % 360}, 100%, 60%, 0.3)`);
-            centerGlow.addColorStop(1, 'transparent');
-            ctx.fillStyle = centerGlow;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 100 + energy * 100, 0, Math.PI * 2);
-            ctx.fill();
-            
-            const orbitCount = 8 + Math.floor(energy * 8);
+            const centerGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 80 + energy * 120);
+            centerGlow.addColorStop(0, `hsla(${hueBase}, 100%, 90%, ${0.6 + energy * 0.4})`); centerGlow.addColorStop(0.3, `hsla(${(hueBase + 60) % 360}, 100%, 60%, 0.3)`); centerGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = centerGlow; ctx.beginPath(); ctx.arc(centerX, centerY, 80 + energy * 120, 0, Math.PI * 2); ctx.fill();
+            const orbitCount = 5 + Math.floor(energy * 10);
             for (let i = 0; i < orbitCount; i++) {
-                const orbitRadius = 80 + i * 30 + Math.sin(time + i) * 20;
-                const orbitSpeed = 1 + i * 0.2;
-                const angle = time * orbitSpeed + (i / orbitCount) * Math.PI * 2;
-                const x = centerX + Math.cos(angle) * orbitRadius;
-                const y = centerY + Math.sin(angle) * orbitRadius;
-                const size = 10 + Math.sin(time * 2 + i) * 5 + energy * 10;
-                const hue = (hueBase + i * 30 + time * 20) % 360;
-                
+                const orbitRadius = 60 + i * 25 + Math.sin(time * 0.5 + i) * 15, orbitSpeed = (0.4 + energy * 0.8) + i * 0.1, angle = time * orbitSpeed + (i / orbitCount) * Math.PI * 2;
+                const x = centerX + Math.cos(angle) * orbitRadius, y = centerY + Math.sin(angle) * orbitRadius, size = 8 + Math.sin(time + i) * 4 + energy * 12, hue = (hueBase + i * 30 + time * 10) % 360;
                 const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
-                gradient.addColorStop(0, `hsla(${hue}, 100%, 80%, 1)`);
-                gradient.addColorStop(0.5, `hsla(${hue}, 100%, 60%, 0.5)`);
-                gradient.addColorStop(1, 'transparent');
-                ctx.beginPath();
-                ctx.fillStyle = gradient;
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fill();
+                gradient.addColorStop(0, `hsla(${hue}, 100%, 80%, 1)`); gradient.addColorStop(0.5, `hsla(${hue}, 100%, 60%, 0.5)`); gradient.addColorStop(1, 'transparent');
+                ctx.beginPath(); ctx.fillStyle = gradient; ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
             }
         }
 
-        // ============== MODE 6: 3D PIPES (Windows Screensaver) ==============
-        let pipes = [];
-        let pipeTimer = 0;
-        
-        function initPipes() {
-            pipes = [];
-            pipeTimer = 0;
-            addNewPipe();
-        }
-        
-        function addNewPipe() {
-            pipes.push({
-                points: [{ 
-                    x: Math.random() * width * 0.6 + width * 0.2, 
-                    y: Math.random() * height * 0.4 + height * 0.1,
-                    z: 0
-                }],
-                direction: Math.floor(Math.random() * 6),
-                hue: (hueBase + pipes.length * 60) % 360,
-                thickness: 15 + energy * 10
-            });
-        }
-        
+        // MODE 6: 3D PIPES
+        let pipes = [], pipeTimer = 0;
+        function initPipes() { pipes = []; pipeTimer = 0; addNewPipe(); }
+        function addNewPipe() { pipes.push({ points: [{ x: Math.random() * width * 0.6 + width * 0.2, y: Math.random() * height * 0.4 + height * 0.1, z: 0 }], direction: Math.floor(Math.random() * 6), hue: (hueBase + pipes.length * 60) % 360, thickness: 12 + energy * 12 }); }
         function drawPipes() {
-            ctx.fillStyle = 'rgba(0, 0, 20, 0.05)';
-            ctx.fillRect(0, 0, width, height);
-            
-            pipeTimer += 1 + energy * 2;
+            ctx.fillStyle = 'rgba(0, 0, 20, 0.05)'; ctx.fillRect(0, 0, width, height);
+            pipeTimer += 0.3 + energy * 2.5;
             if (pipeTimer > 5) {
                 pipeTimer = 0;
                 pipes.forEach(pipe => {
-                    const last = pipe.points[pipe.points.length - 1];
-                    const step = 20 + energy * 15;
+                    const last = pipe.points[pipe.points.length - 1], step = 15 + energy * 20;
                     let newPoint = { ...last };
-                    
-                    // Change direction occasionally
-                    if (Math.random() < 0.15) {
-                        pipe.direction = Math.floor(Math.random() * 4);
-                    }
-                    
-                    switch (pipe.direction) {
-                        case 0: newPoint.x += step; break;
-                        case 1: newPoint.x -= step; break;
-                        case 2: newPoint.y += step; break;
-                        case 3: newPoint.y -= step; break;
-                    }
-                    
-                    // Bounce off edges
+                    if (Math.random() < 0.15) pipe.direction = Math.floor(Math.random() * 4);
+                    switch (pipe.direction) { case 0: newPoint.x += step; break; case 1: newPoint.x -= step; break; case 2: newPoint.y += step; break; case 3: newPoint.y -= step; break; }
                     if (newPoint.x < 50 || newPoint.x > width - 50) pipe.direction = pipe.direction === 0 ? 1 : 0;
                     if (newPoint.y < 50 || newPoint.y > height * 0.6) pipe.direction = pipe.direction === 2 ? 3 : 2;
-                    
-                    newPoint.x = Math.max(50, Math.min(width - 50, newPoint.x));
-                    newPoint.y = Math.max(50, Math.min(height * 0.6, newPoint.y));
-                    
-                    pipe.points.push(newPoint);
-                    if (pipe.points.length > 100) pipe.points.shift();
+                    newPoint.x = Math.max(50, Math.min(width - 50, newPoint.x)); newPoint.y = Math.max(50, Math.min(height * 0.6, newPoint.y));
+                    pipe.points.push(newPoint); if (pipe.points.length > 100) pipe.points.shift();
                 });
             }
-            
-            // Add new pipes on energy
-            if (energy > 0.5 && pipes.length < 5 && Math.random() < 0.02) {
-                addNewPipe();
-            }
-            
+            if (energy > 0.5 && pipes.length < 5 && Math.random() < 0.02) addNewPipe();
             pipes.forEach(pipe => {
                 if (pipe.points.length < 2) return;
-                
                 for (let i = 1; i < pipe.points.length; i++) {
-                    const p1 = pipe.points[i - 1];
-                    const p2 = pipe.points[i];
-                    const hue = (pipe.hue + i * 2 + time * 20) % 360;
-                    
-                    // Draw pipe segment with 3D effect
+                    const p1 = pipe.points[i - 1], p2 = pipe.points[i], hue = (pipe.hue + i * 2 + time * 10) % 360;
                     const gradient = ctx.createLinearGradient(p1.x, p1.y - pipe.thickness, p1.x, p1.y + pipe.thickness);
-                    gradient.addColorStop(0, `hsl(${hue}, 70%, 70%)`);
-                    gradient.addColorStop(0.3, `hsl(${hue}, 80%, 50%)`);
-                    gradient.addColorStop(0.7, `hsl(${hue}, 80%, 30%)`);
-                    gradient.addColorStop(1, `hsl(${hue}, 70%, 20%)`);
-                    
-                    ctx.beginPath();
-                    ctx.strokeStyle = gradient;
-                    ctx.lineWidth = pipe.thickness;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                    
-                    // Joint sphere
+                    gradient.addColorStop(0, `hsl(${hue}, 70%, 70%)`); gradient.addColorStop(0.3, `hsl(${hue}, 80%, 50%)`); gradient.addColorStop(0.7, `hsl(${hue}, 80%, 30%)`); gradient.addColorStop(1, `hsl(${hue}, 70%, 20%)`);
+                    ctx.beginPath(); ctx.strokeStyle = gradient; ctx.lineWidth = pipe.thickness; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
                     if (i < pipe.points.length - 1) {
                         const jointGrad = ctx.createRadialGradient(p2.x - 3, p2.y - 3, 0, p2.x, p2.y, pipe.thickness * 0.7);
-                        jointGrad.addColorStop(0, `hsl(${hue}, 70%, 80%)`);
-                        jointGrad.addColorStop(0.5, `hsl(${hue}, 80%, 50%)`);
-                        jointGrad.addColorStop(1, `hsl(${hue}, 80%, 30%)`);
-                        ctx.beginPath();
-                        ctx.fillStyle = jointGrad;
-                        ctx.arc(p2.x, p2.y, pipe.thickness * 0.6, 0, Math.PI * 2);
-                        ctx.fill();
+                        jointGrad.addColorStop(0, `hsl(${hue}, 70%, 80%)`); jointGrad.addColorStop(0.5, `hsl(${hue}, 80%, 50%)`); jointGrad.addColorStop(1, `hsl(${hue}, 80%, 30%)`);
+                        ctx.beginPath(); ctx.fillStyle = jointGrad; ctx.arc(p2.x, p2.y, pipe.thickness * 0.6, 0, Math.PI * 2); ctx.fill();
                     }
                 }
             });
         }
 
-        // ============== MODE 7: MATRIX ==============
+        // MODE 7: MATRIX
         let matrixDrops = [];
-        
-        function initMatrix() {
-            matrixDrops = [];
-            const columns = Math.floor(width / 20);
-            for (let i = 0; i < columns; i++) {
-                matrixDrops.push({
-                    x: i * 20,
-                    y: Math.random() * -height,
-                    speed: Math.random() * 3 + 2,
-                    chars: [],
-                    length: Math.floor(Math.random() * 20) + 10
-                });
-            }
-        }
-        
+        function initMatrix() { matrixDrops = []; const columns = Math.floor(width / 20); for (let i = 0; i < columns; i++) matrixDrops.push({ x: i * 20, y: Math.random() * -height, speed: Math.random() * 1 + 0.5, chars: [], length: Math.floor(Math.random() * 20) + 10 }); }
         function drawMatrix() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.fillRect(0, 0, width, height);
-            
-            const speedMult = 1 + energy * 2;
-            const chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
-            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, width, height);
+            const speedMult = 0.4 + energy * 2.5, chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789';
             matrixDrops.forEach(drop => {
                 drop.y += drop.speed * speedMult;
-                
-                if (drop.y > height + drop.length * 20) {
-                    drop.y = Math.random() * -200;
-                    drop.speed = Math.random() * 3 + 2;
-                    drop.length = Math.floor(Math.random() * 20) + 10;
-                }
-                
-                // Update characters occasionally
-                if (Math.random() < 0.1) {
-                    drop.chars = [];
-                    for (let i = 0; i < drop.length; i++) {
-                        drop.chars.push(chars[Math.floor(Math.random() * chars.length)]);
-                    }
-                }
-                
-                // Draw the trail
+                if (drop.y > height + drop.length * 20) { drop.y = Math.random() * -200; drop.speed = Math.random() * 1 + 0.5; drop.length = Math.floor(Math.random() * 20) + 10; }
+                if (Math.random() < 0.1) { drop.chars = []; for (let i = 0; i < drop.length; i++) drop.chars.push(chars[Math.floor(Math.random() * chars.length)]); }
                 for (let i = 0; i < drop.length; i++) {
-                    const y = drop.y - i * 20;
-                    if (y < 0 || y > height) continue;
-                    
-                    const char = drop.chars[i] || chars[Math.floor(Math.random() * chars.length)];
-                    const brightness = 1 - (i / drop.length);
-                    
-                    const hue = (hueBase + 120) % 360; // Green-ish but follows hue
-                    
-                    if (i === 0) {
-                        ctx.fillStyle = `hsla(${hue}, 100%, 90%, 1)`;
-                        ctx.font = 'bold 18px monospace';
-                    } else {
-                        ctx.fillStyle = `hsla(${hue}, 100%, ${50 * brightness + 20}%, ${brightness})`;
-                        ctx.font = '16px monospace';
-                    }
-                    
+                    const y = drop.y - i * 20; if (y < 0 || y > height) continue;
+                    const char = drop.chars[i] || chars[Math.floor(Math.random() * chars.length)], brightness = 1 - (i / drop.length), hue = (hueBase + 120) % 360;
+                    if (i === 0) { ctx.fillStyle = `hsla(${hue}, 100%, 90%, 1)`; ctx.font = 'bold 18px monospace'; }
+                    else { ctx.fillStyle = `hsla(${hue}, 100%, ${50 * brightness + 20}%, ${brightness})`; ctx.font = '16px monospace'; }
                     ctx.fillText(char, drop.x, y);
                 }
             });
-            
-            // Add glow effect
             const glow = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/2);
-            glow.addColorStop(0, `hsla(${(hueBase + 120) % 360}, 100%, 50%, ${0.05 + energy * 0.05})`);
-            glow.addColorStop(1, 'transparent');
-            ctx.fillStyle = glow;
-            ctx.fillRect(0, 0, width, height);
+            glow.addColorStop(0, `hsla(${(hueBase + 120) % 360}, 100%, 50%, ${0.03 + energy * 0.07})`); glow.addColorStop(1, 'transparent');
+            ctx.fillStyle = glow; ctx.fillRect(0, 0, width, height);
         }
 
-        // ============== MODE 8: DVD BOUNCING LOGO ==============
+        // MODE 8: DVD BOUNCING LOGO
         let dvdLogos = [];
-        
-        function initDVD() {
-            dvdLogos = [{
-                x: width / 2,
-                y: height / 3,
-                vx: 3,
-                vy: 2,
-                hue: hueBase,
-                size: 100
-            }];
-        }
-        
+        function initDVD() { dvdLogos = [{ x: width / 2, y: height / 3, vx: 1.5, vy: 1, hue: hueBase, size: 100 }]; }
         function drawDVD() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-            ctx.fillRect(0, 0, width, height);
-            
-            const speedMult = 1 + energy * 1.5;
-            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; ctx.fillRect(0, 0, width, height);
+            const speedMult = 0.5 + energy * 2;
             dvdLogos.forEach(logo => {
-                logo.x += logo.vx * speedMult;
-                logo.y += logo.vy * speedMult;
-                
-                // Bounce and change color
-                if (logo.x <= logo.size || logo.x >= width - logo.size) {
-                    logo.vx *= -1;
-                    logo.hue = (logo.hue + 60) % 360;
-                    // Spawn particles on bounce
-                    for (let i = 0; i < 10; i++) {
-                        particles.push(new Particle(logo.x, logo.y, logo.hue, {
-                            size: Math.random() * 15 + 5,
-                            speedX: (Math.random() - 0.5) * 10,
-                            speedY: (Math.random() - 0.5) * 10,
-                            gravity: 0
-                        }));
-                    }
-                }
-                if (logo.y <= logo.size || logo.y >= height * 0.6 - logo.size) {
-                    logo.vy *= -1;
-                    logo.hue = (logo.hue + 60) % 360;
-                    for (let i = 0; i < 10; i++) {
-                        particles.push(new Particle(logo.x, logo.y, logo.hue, {
-                            size: Math.random() * 15 + 5,
-                            speedX: (Math.random() - 0.5) * 10,
-                            speedY: (Math.random() - 0.5) * 10,
-                            gravity: 0
-                        }));
-                    }
-                }
-                
-                logo.x = Math.max(logo.size, Math.min(width - logo.size, logo.x));
-                logo.y = Math.max(logo.size, Math.min(height * 0.6 - logo.size, logo.y));
-                
-                // Draw DVD logo
-                const hue = (logo.hue + time * 10) % 360;
-                
-                // Glow
+                logo.x += logo.vx * speedMult; logo.y += logo.vy * speedMult;
+                if (logo.x <= logo.size || logo.x >= width - logo.size) { logo.vx *= -1; logo.hue = (logo.hue + 60) % 360; for (let i = 0; i < 10; i++) particles.push(new Particle(logo.x, logo.y, logo.hue, { size: Math.random() * 15 + 5, speedX: (Math.random() - 0.5) * 10, speedY: (Math.random() - 0.5) * 10, gravity: 0 })); }
+                if (logo.y <= logo.size || logo.y >= height * 0.6 - logo.size) { logo.vy *= -1; logo.hue = (logo.hue + 60) % 360; for (let i = 0; i < 10; i++) particles.push(new Particle(logo.x, logo.y, logo.hue, { size: Math.random() * 15 + 5, speedX: (Math.random() - 0.5) * 10, speedY: (Math.random() - 0.5) * 10, gravity: 0 })); }
+                logo.x = Math.max(logo.size, Math.min(width - logo.size, logo.x)); logo.y = Math.max(logo.size, Math.min(height * 0.6 - logo.size, logo.y));
+                const hue = (logo.hue + time * 5) % 360;
                 const glow = ctx.createRadialGradient(logo.x, logo.y, 0, logo.x, logo.y, logo.size * 1.5);
-                glow.addColorStop(0, `hsla(${hue}, 100%, 60%, 0.3)`);
-                glow.addColorStop(1, 'transparent');
-                ctx.fillStyle = glow;
-                ctx.fillRect(0, 0, width, height);
-                
-                // DVD text
-                ctx.save();
-                ctx.translate(logo.x, logo.y);
-                
-                ctx.font = `bold ${logo.size * 0.6}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                // Shadow
-                ctx.fillStyle = `hsla(${hue}, 100%, 20%, 0.8)`;
-                ctx.fillText('DVD', 4, 4);
-                
-                // Main text
+                glow.addColorStop(0, `hsla(${hue}, 100%, 60%, 0.3)`); glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow; ctx.fillRect(0, 0, width, height);
+                ctx.save(); ctx.translate(logo.x, logo.y); ctx.font = `bold ${logo.size * 0.6}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = `hsla(${hue}, 100%, 20%, 0.8)`; ctx.fillText('DVD', 4, 4);
                 const textGrad = ctx.createLinearGradient(-logo.size/2, -logo.size/2, logo.size/2, logo.size/2);
-                textGrad.addColorStop(0, `hsl(${hue}, 100%, 70%)`);
-                textGrad.addColorStop(0.5, `hsl(${(hue + 30) % 360}, 100%, 60%)`);
-                textGrad.addColorStop(1, `hsl(${(hue + 60) % 360}, 100%, 70%)`);
-                ctx.fillStyle = textGrad;
-                ctx.fillText('DVD', 0, 0);
-                
-                ctx.restore();
+                textGrad.addColorStop(0, `hsl(${hue}, 100%, 70%)`); textGrad.addColorStop(0.5, `hsl(${(hue + 30) % 360}, 100%, 60%)`); textGrad.addColorStop(1, `hsl(${(hue + 60) % 360}, 100%, 70%)`);
+                ctx.fillStyle = textGrad; ctx.fillText('DVD', 0, 0); ctx.restore();
             });
-            
-            // Add more logos on high energy
-            if (energy > 0.7 && dvdLogos.length < 4 && Math.random() < 0.01) {
-                dvdLogos.push({
-                    x: Math.random() * width * 0.6 + width * 0.2,
-                    y: Math.random() * height * 0.3 + height * 0.1,
-                    vx: (Math.random() - 0.5) * 6,
-                    vy: (Math.random() - 0.5) * 6,
-                    hue: (hueBase + dvdLogos.length * 90) % 360,
-                    size: 80
-                });
-            }
+            if (energy > 0.7 && dvdLogos.length < 4 && Math.random() < 0.01) dvdLogos.push({ x: Math.random() * width * 0.6 + width * 0.2, y: Math.random() * height * 0.3 + height * 0.1, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3, hue: (hueBase + dvdLogos.length * 90) % 360, size: 80 });
         }
 
-        // ============== MODE 9: FIREWORKS ==============
-        let fireworks = [];
-        let fireworkParticles = [];
-        
+        // MODE 9: FIREWORKS
+        let fireworks = [], fireworkParticles = [];
         function drawFireworks() {
-            ctx.fillStyle = 'rgba(0, 0, 10, 0.2)';
-            ctx.fillRect(0, 0, width, height);
-            
-            // Limit total particles to prevent crashes
+            ctx.fillStyle = 'rgba(0, 0, 10, 0.2)'; ctx.fillRect(0, 0, width, height);
             const maxFireworkParticles = 500;
-            
-            // Launch new fireworks (reduced frequency)
-            if (fireworkParticles.length < maxFireworkParticles && Math.random() < 0.015 + energy * 0.04) {
-                fireworks.push({
-                    x: Math.random() * width * 0.8 + width * 0.1,
-                    y: height,
-                    vy: -8 - Math.random() * 4 - energy * 2,
-                    targetY: Math.random() * height * 0.3 + height * 0.1,
-                    hue: (hueBase + Math.random() * 60) % 360
-                });
-            }
-            
-            // Update and draw fireworks
+            if (fireworkParticles.length < maxFireworkParticles && Math.random() < 0.005 + energy * 0.05) fireworks.push({ x: Math.random() * width * 0.8 + width * 0.1, y: height, vy: -5 - Math.random() * 3 - energy * 4, targetY: Math.random() * height * 0.3 + height * 0.1, hue: (hueBase + Math.random() * 60) % 360 });
             fireworks = fireworks.filter(fw => {
-                fw.y += fw.vy;
-                fw.vy += 0.1;
-                
-                // Draw trail
-                ctx.beginPath();
-                ctx.fillStyle = `hsla(${fw.hue}, 100%, 80%, 0.8)`;
-                ctx.arc(fw.x, fw.y, 3, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Explode
+                fw.y += fw.vy; fw.vy += 0.1;
+                ctx.beginPath(); ctx.fillStyle = `hsla(${fw.hue}, 100%, 80%, 0.8)`; ctx.arc(fw.x, fw.y, 3, 0, Math.PI * 2); ctx.fill();
                 if (fw.y <= fw.targetY || fw.vy >= 0) {
-                    // Reduced particle count for performance
-                    const particleCount = Math.min(40 + energy * 20, 60);
-                    const availableSlots = maxFireworkParticles - fireworkParticles.length;
-                    const actualCount = Math.min(particleCount, availableSlots);
-                    
-                    for (let i = 0; i < actualCount; i++) {
-                        const angle = (i / actualCount) * Math.PI * 2;
-                        const speed = Math.random() * 5 + 2;
-                        fireworkParticles.push({
-                            x: fw.x,
-                            y: fw.y,
-                            vx: Math.cos(angle) * speed,
-                            vy: Math.sin(angle) * speed,
-                            hue: (fw.hue + Math.random() * 40 - 20) % 360,
-                            life: 1,
-                            decay: 0.02 + Math.random() * 0.015
-                        });
-                    }
+                    const particleCount = Math.min(40 + energy * 20, 60), availableSlots = maxFireworkParticles - fireworkParticles.length, actualCount = Math.min(particleCount, availableSlots);
+                    for (let i = 0; i < actualCount; i++) { const angle = (i / actualCount) * Math.PI * 2, speed = Math.random() * 5 + 2; fireworkParticles.push({ x: fw.x, y: fw.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, hue: (fw.hue + Math.random() * 40 - 20) % 360, life: 1, decay: 0.02 + Math.random() * 0.015 }); }
                     return false;
                 }
                 return true;
             });
-            
-            // Update and draw firework particles (optimized)
             fireworkParticles = fireworkParticles.filter(p => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.08;
-                p.vx *= 0.98;
-                p.life -= p.decay;
-                
+                p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.vx *= 0.98; p.life -= p.decay;
                 if (p.life <= 0) return false;
-                
                 const size = Math.max(0.5, p.life * 4);
-                
-                // Simple circle instead of gradient for better performance
-                ctx.beginPath();
-                ctx.fillStyle = `hsla(${p.hue}, 100%, ${50 + p.life * 30}%, ${p.life})`;
-                ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
-                ctx.fill();
-                
+                ctx.beginPath(); ctx.fillStyle = `hsla(${p.hue}, 100%, ${50 + p.life * 30}%, ${p.life})`; ctx.arc(p.x, p.y, size, 0, Math.PI * 2); ctx.fill();
                 return true;
             });
         }
 
-        // ============== MODE 10: MYSTIFY (WORMS) ==============
+        // MODE 10: MYSTIFY (WORMS)
         let worms = [];
-        
-        function initWorms() {
-            worms = [];
-            for (let i = 0; i < 3; i++) {
-                worms.push({
-                    points: [],
-                    vx: (Math.random() - 0.5) * 4,
-                    vy: (Math.random() - 0.5) * 4,
-                    hue: (hueBase + i * 120) % 360,
-                    maxLength: 50
-                });
-                // Initialize starting position
-                const startX = Math.random() * width * 0.6 + width * 0.2;
-                const startY = Math.random() * height * 0.3 + height * 0.1;
-                worms[i].points.push({ x: startX, y: startY });
-            }
-        }
-        
+        function initWorms() { worms = []; for (let i = 0; i < 3; i++) { worms.push({ points: [], vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, hue: (hueBase + i * 120) % 360, maxLength: 50 }); worms[i].points.push({ x: Math.random() * width * 0.6 + width * 0.2, y: Math.random() * height * 0.3 + height * 0.1 }); } }
         function drawWorms() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-            ctx.fillRect(0, 0, width, height);
-            
-            const speedMult = 1 + energy * 1.5;
-            
-            worms.forEach((worm, wormIndex) => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'; ctx.fillRect(0, 0, width, height);
+            const speedMult = 0.4 + energy * 1.8;
+            worms.forEach(worm => {
                 if (worm.points.length === 0) return;
-                
                 const head = worm.points[worm.points.length - 1];
-                let newX = head.x + worm.vx * speedMult;
-                let newY = head.y + worm.vy * speedMult;
-                
-                // Bounce off walls
-                if (newX < 0 || newX > width) {
-                    worm.vx *= -1;
-                    newX = Math.max(0, Math.min(width, newX));
-                    worm.hue = (worm.hue + 30) % 360;
-                }
-                if (newY < 0 || newY > height * 0.6) {
-                    worm.vy *= -1;
-                    newY = Math.max(0, Math.min(height * 0.6, newY));
-                    worm.hue = (worm.hue + 30) % 360;
-                }
-                
-                // Slight random direction change
-                if (Math.random() < 0.02) {
-                    worm.vx += (Math.random() - 0.5) * 2;
-                    worm.vy += (Math.random() - 0.5) * 2;
-                    const speed = Math.sqrt(worm.vx * worm.vx + worm.vy * worm.vy);
-                    const maxSpeed = 5 + energy * 3;
-                    if (speed > maxSpeed) {
-                        worm.vx = (worm.vx / speed) * maxSpeed;
-                        worm.vy = (worm.vy / speed) * maxSpeed;
-                    }
-                }
-                
-                worm.points.push({ x: newX, y: newY });
-                
-                const maxLen = worm.maxLength + energy * 30;
-                if (worm.points.length > maxLen) {
-                    worm.points.shift();
-                }
-                
-                // Draw the worm as connected lines
+                let newX = head.x + worm.vx * speedMult, newY = head.y + worm.vy * speedMult;
+                if (newX < 0 || newX > width) { worm.vx *= -1; newX = Math.max(0, Math.min(width, newX)); worm.hue = (worm.hue + 30) % 360; }
+                if (newY < 0 || newY > height * 0.6) { worm.vy *= -1; newY = Math.max(0, Math.min(height * 0.6, newY)); worm.hue = (worm.hue + 30) % 360; }
+                if (Math.random() < 0.02) { worm.vx += (Math.random() - 0.5) * 1.5; worm.vy += (Math.random() - 0.5) * 1.5; const speed = Math.sqrt(worm.vx * worm.vx + worm.vy * worm.vy), maxSpeed = 3 + energy * 4; if (speed > maxSpeed) { worm.vx = (worm.vx / speed) * maxSpeed; worm.vy = (worm.vy / speed) * maxSpeed; } }
+                worm.points.push({ x: newX, y: newY }); const maxLen = worm.maxLength + energy * 30; if (worm.points.length > maxLen) worm.points.shift();
                 if (worm.points.length > 1) {
-                    ctx.beginPath();
-                    ctx.moveTo(worm.points[0].x, worm.points[0].y);
-                    
-                    for (let i = 1; i < worm.points.length; i++) {
-                        ctx.lineTo(worm.points[i].x, worm.points[i].y);
-                    }
-                    
-                    const hue = (worm.hue + time * 20) % 360;
-                    ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.8)`;
-                    ctx.lineWidth = 2 + energy * 2;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
-                    ctx.stroke();
-                    
-                    // Draw glow
-                    ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.3)`;
-                    ctx.lineWidth = 6 + energy * 4;
-                    ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(worm.points[0].x, worm.points[0].y);
+                    for (let i = 1; i < worm.points.length; i++) ctx.lineTo(worm.points[i].x, worm.points[i].y);
+                    const hue = (worm.hue + time * 10) % 360;
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.8)`; ctx.lineWidth = 2 + energy * 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.3)`; ctx.lineWidth = 6 + energy * 4; ctx.stroke();
                 }
             });
-            
-            // Add more worms on high energy
-            if (energy > 0.6 && worms.length < 6 && Math.random() < 0.01) {
-                const newWorm = {
-                    points: [{ 
-                        x: Math.random() * width * 0.6 + width * 0.2, 
-                        y: Math.random() * height * 0.3 + height * 0.1 
-                    }],
-                    vx: (Math.random() - 0.5) * 4,
-                    vy: (Math.random() - 0.5) * 4,
-                    hue: (hueBase + worms.length * 60) % 360,
-                    maxLength: 50
-                };
-                worms.push(newWorm);
-            }
+            if (energy > 0.6 && worms.length < 6 && Math.random() < 0.01) worms.push({ points: [{ x: Math.random() * width * 0.6 + width * 0.2, y: Math.random() * height * 0.3 + height * 0.1 }], vx: (Math.random() - 0.5) * 2, vy: (Math.random() - 0.5) * 2, hue: (hueBase + worms.length * 60) % 360, maxLength: 50 });
         }
 
-        // ============== MAIN FUNCTIONS ==============
+        // MAIN FUNCTIONS
         function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            initStars();
-            initBubbles();
-            initPipes();
-            initMatrix();
-            initDVD();
-            initWorms();
+            width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
+            traceCanvas.width = width; traceCanvas.height = height;
+            initStars(); initBubbles(); initPipes(); initMatrix(); initDVD(); initWorms();
         }
 
         function spawnParticles(char) {
-            const charCode = char.charCodeAt(0);
-            const hue = (charCode * 15 + hueBase) % 360;
-            const x = Math.random() * width;
-            const y = Math.random() * height * 0.5;
-            
-            for (let i = 0; i < 5; i++) {
-                particles.push(new Particle(x, y, hue + Math.random() * 40 - 20));
-            }
+            const charCode = char.charCodeAt(0), hue = (charCode * 15 + hueBase) % 360, x = Math.random() * width, y = Math.random() * height * 0.5;
+            for (let i = 0; i < 5; i++) particles.push(new Particle(x, y, hue + Math.random() * 40 - 20));
         }
 
         function updateText(char) {
-            if (char === 'Backspace') {
-                typedString = typedString.slice(0, -1);
-            } else if (char === ' ') {
-                typedString += ' ';
-            } else if (char.length === 1) {
-                typedString += char;
-                targetEnergy = Math.min(1, targetEnergy + 0.15);
-                hueBase = (hueBase + char.charCodeAt(0) * 3) % 360;
-                spawnParticles(char);
-            }
-
+            if (char === 'Backspace') typedString = typedString.slice(0, -1);
+            else if (char === ' ') typedString += ' ';
+            else if (char.length === 1) { typedString += char; targetEnergy = Math.min(1, targetEnergy + 0.15); hueBase = (hueBase + char.charCodeAt(0) * 3) % 360; spawnParticles(char); }
             const displayText = typedString.slice(-20);
-            textDisplay.innerHTML = displayText.split('').map((letter, i) => {
-                if (letter === ' ') return ' ';
-                return `<span class="letter-pop" style="animation-delay: ${i * 0.02}s">${letter}</span>`;
-            }).join('');
+            textDisplay.innerHTML = displayText.split('').map((letter, i) => letter === ' ' ? ' ' : `<span class="letter-pop" style="animation-delay: ${i * 0.02}s">${letter}</span>`).join('');
         }
 
         function setMode(mode) {
             currentMode = mode;
-            modeButtons.forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.mode) === mode);
-            });
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, width, height);
-            
-            // Re-init mode-specific elements
-            if (mode === 2) initStars();
-            if (mode === 3) initBubbles();
-            if (mode === 6) initPipes();
-            if (mode === 7) initMatrix();
-            if (mode === 8) initDVD();
-            if (mode === 10) initWorms();
-            fireParticles = [];
-            fireworks = [];
-            fireworkParticles = [];
+            modeButtons.forEach(btn => btn.classList.toggle('active', parseInt(btn.dataset.mode) === mode));
+            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height);
+            if (mode === 2) initStars(); if (mode === 3) initBubbles(); if (mode === 6) initPipes(); if (mode === 7) initMatrix(); if (mode === 8) initDVD(); if (mode === 10) initWorms();
+            fireParticles = []; fireworks = []; fireworkParticles = [];
         }
 
         function animate() {
-            time += 0.016;
-            energy += (targetEnergy - energy) * 0.1;
-            targetEnergy *= 0.995;
-            
+            time += 0.016; energy += (targetEnergy - energy) * 0.1; targetEnergy *= 0.995;
             switch (currentMode) {
-                case 1: drawOceanWaves(); break;
-                case 2: drawStarfield(); break;
-                case 3: drawBubbles(); break;
-                case 4: drawFire(); break;
-                case 5: drawRainbowSpiral(); break;
-                case 6: drawPipes(); break;
-                case 7: drawMatrix(); break;
-                case 8: drawDVD(); break;
-                case 9: drawFireworks(); break;
-                case 10: drawWorms(); break;
+                case 1: drawOceanWaves(); break; case 2: drawStarfield(); break; case 3: drawBubbles(); break; case 4: drawFire(); break; case 5: drawRainbowSpiral(); break;
+                case 6: drawPipes(); break; case 7: drawMatrix(); break; case 8: drawDVD(); break; case 9: drawFireworks(); break; case 10: drawWorms(); break;
             }
-            
-            particles = particles.filter(p => p.life > 0);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            
+            particles = particles.filter(p => p.life > 0); particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animate);
         }
 
-        // Event listeners
-        window.addEventListener('resize', resize);
+        // INPUT HANDLING
+        function detectMobile() {
+            isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (isMobile) { keyboardToggle.style.display = 'block'; traceOverlay.style.display = 'block'; traceCanvas.style.display = 'block'; traceHint.style.display = 'block'; showNextTraceLetter(); }
+        }
 
-        // Desktop keyboard
-        document.addEventListener('keydown', (e) => {
-            if (e.key === ' ') e.preventDefault();
-            if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return;
-            updateText(e.key);
+        document.addEventListener('keydown', (e) => { if (e.key === ' ') e.preventDefault(); if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return; updateText(e.key); });
+
+        keyboardToggle.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            if (keyboardVisible) { mobileInput.blur(); keyboardToggle.textContent = 'Keyboard'; keyboardVisible = false; }
+            else { mobileInput.focus(); keyboardToggle.textContent = 'Hide'; keyboardVisible = true; }
         });
 
-        // Mobile input handling
-        const mobileInput = document.getElementById('mobile-input');
-        
-        mobileInput.addEventListener('input', (e) => {
-            const value = e.target.value;
-            if (value.length > 0) {
-                const char = value[value.length - 1];
-                updateText(char);
-            }
-            // Keep input short to prevent issues
-            if (mobileInput.value.length > 5) {
-                mobileInput.value = mobileInput.value.slice(-2);
-            }
-        });
+        mobileInput.addEventListener('input', (e) => { const value = e.target.value; if (value.length > 0) updateText(value[value.length - 1]); if (mobileInput.value.length > 5) mobileInput.value = mobileInput.value.slice(-2); });
+        mobileInput.addEventListener('keydown', (e) => { if (e.key === 'Backspace') updateText('Backspace'); });
+        mobileInput.addEventListener('blur', () => { keyboardToggle.textContent = 'Keyboard'; keyboardVisible = false; });
+        mobileInput.addEventListener('focus', () => { keyboardToggle.textContent = 'Hide'; keyboardVisible = true; });
+        modeButtons.forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); setMode(parseInt(btn.dataset.mode)); }));
 
-        mobileInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace') {
-                updateText('Backspace');
-            }
-        });
+        // TRACING HANDLING
+        function handleTraceStart(x, y) { isTracing = true; lastTraceX = x; lastTraceY = y; targetEnergy = Math.min(1, targetEnergy + 0.05); }
+        function handleTraceMove(x, y) {
+            if (!isTracing) return;
+            targetEnergy = Math.min(1, targetEnergy + 0.02); hueBase = (hueBase + 2) % 360;
+            traceCtx.beginPath(); traceCtx.strokeStyle = `hsla(${hueBase}, 100%, 60%, 0.8)`; traceCtx.lineWidth = 8; traceCtx.lineCap = 'round'; traceCtx.moveTo(lastTraceX, lastTraceY); traceCtx.lineTo(x, y); traceCtx.stroke();
+            traceCtx.beginPath(); traceCtx.strokeStyle = `hsla(${hueBase}, 100%, 70%, 0.3)`; traceCtx.lineWidth = 20; traceCtx.moveTo(lastTraceX, lastTraceY); traceCtx.lineTo(x, y); traceCtx.stroke();
+            if (Math.random() < 0.3) particles.push(new Particle(x, y, hueBase, { size: Math.random() * 15 + 5, speedX: (Math.random() - 0.5) * 4, speedY: (Math.random() - 0.5) * 4, gravity: 0.02 }));
+            lastTraceX = x; lastTraceY = y;
+        }
+        function handleTraceEnd() { if (isTracing) { isTracing = false; updateText(currentTraceLetter); setTimeout(() => showNextTraceLetter(), 300); } }
 
-        // Focus input on tap for mobile
-        mobileInput.addEventListener('click', () => {
-            mobileInput.focus();
-        });
-
-        // Keep focus on mobile input
-        mobileInput.addEventListener('blur', () => {
-            setTimeout(() => mobileInput.focus(), 100);
-        });
-
-        // Initial focus for mobile
-        setTimeout(() => mobileInput.focus(), 500);
-
-        modeButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                setMode(parseInt(btn.dataset.mode));
-                setTimeout(() => mobileInput.focus(), 100);
-            });
-        });
+        traceCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const touch = e.touches[0]; handleTraceStart(touch.clientX, touch.clientY); }, { passive: false });
+        traceCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); const touch = e.touches[0]; handleTraceMove(touch.clientX, touch.clientY); }, { passive: false });
+        traceCanvas.addEventListener('touchend', (e) => { e.preventDefault(); handleTraceEnd(); }, { passive: false });
+        traceCanvas.addEventListener('touchcancel', () => handleTraceEnd());
+        traceCanvas.addEventListener('mousedown', (e) => handleTraceStart(e.clientX, e.clientY));
+        traceCanvas.addEventListener('mousemove', (e) => handleTraceMove(e.clientX, e.clientY));
+        traceCanvas.addEventListener('mouseup', () => handleTraceEnd());
+        traceCanvas.addEventListener('mouseleave', () => handleTraceEnd());
 
         document.addEventListener('contextmenu', e => e.preventDefault());
 
-        // Initialize
-        resize();
-        setMode(1);
-        animate();
+        window.addEventListener('resize', resize);
+        resize(); shuffleLetters(); detectMobile(); setMode(1); animate();
     </script>
 </body>
 </html>

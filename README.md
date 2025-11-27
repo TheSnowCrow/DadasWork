@@ -1,6 +1,8 @@
-# Magic Typing
+# Dada's Work: Magic Typing
 
 A colorful, interactive typing visualizer for kids. Type anything and watch the screen come alive with beautiful animations!
+
+My son always wants to 'help' with Dada's Work and type on the computer.  I pull this up and let him go to town!
 
 ## Demo
 
@@ -31,14 +33,6 @@ Open `index.html` in any browser or visit your GitHub Pages URL.
 - Letters appear in big glowing text at the bottom
 - The visualization gets more energetic as you type
 - Click any button at the top to switch modes
-
-## Deploy to GitHub Pages
-
-1. Create a new repository on GitHub
-2. Upload `index.html` (and optionally this README)
-3. Go to Settings > Pages
-4. Set source to your main branch
-5. Your site will be live at `https://yourusername.github.io/reponame`
 
 ## License
 

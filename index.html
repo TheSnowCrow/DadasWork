@@ -104,7 +104,7 @@
             display: none;
         }
 
-        .mode-btn {
+        .action-btn, .mode-btn {
             background: rgba(255,255,255,0.2);
             border: 1px solid rgba(255,255,255,0.3);
             border-radius: 12px;
@@ -120,7 +120,7 @@
             flex-shrink: 0;
         }
 
-        .mode-btn:hover, .mode-btn:active {
+        .mode-btn:hover, .mode-btn:active, .action-btn:hover, .action-btn:active {
             background: rgba(255,255,255,0.35);
         }
 
@@ -151,47 +151,40 @@
             opacity: 0;
         }
 
-        /* Keyboard toggle button for adults */
-        #keyboard-toggle {
+        /* Controls positioned in the bottom right corner */
+        .controls-bottom-right {
             position: fixed;
             bottom: 10px;
             right: 10px;
             z-index: 25;
-            background: rgba(255,255,255,0.15);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            padding: 8px 12px;
-            color: rgba(255,255,255,0.6);
-            font-size: 11px;
-            cursor: pointer;
-            font-family: inherit;
-            display: none;
+            display: flex;
+            gap: 5px;
+        }
+
+        #keyboard-toggle {
+            background: rgba(100, 100, 255, 0.25);
         }
 
         #keyboard-toggle:active {
-            background: rgba(255,255,255,0.3);
+            background: rgba(100, 100, 255, 0.4);
         }
 
-        /* Reset button for mobile */
         #reset-btn {
-            position: fixed;
-            bottom: 10px;
-            right: 90px;
-            z-index: 25;
             background: rgba(255, 80, 80, 0.25);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            padding: 8px 12px;
             color: rgba(255,255,255,0.9);
-            font-size: 11px;
-            cursor: pointer;
-            font-family: inherit;
-            display: none;
         }
 
         #reset-btn:active {
             background: rgba(255, 80, 80, 0.4);
         }
+
+        #free-text-toggle {
+            background: rgba(80, 255, 80, 0.25);
+        }
+        #free-text-toggle:active {
+            background: rgba(80, 255, 80, 0.4);
+        }
+
 
         /* Trace letter overlay for both modes */
         #trace-overlay {
@@ -252,7 +245,7 @@
         }
 
         @media (min-width: 700px) {
-            .mode-btn {
+            .mode-btn, .action-btn {
                 padding: 6px 12px;
                 font-size: 13px;
                 border-radius: 15px;
@@ -302,8 +295,12 @@
     <canvas id="trace-canvas"></canvas>
     <div id="trace-hint">Trace the letter with your finger!</div>
 
-    <button id="reset-btn">Reset</button>
-    <button id="keyboard-toggle">Keyboard</button>
+    <div class="controls-bottom-right">
+        <!-- These buttons visibility is controlled by JS -->
+        <button id="reset-btn" class="action-btn" style="display: none;">Reset</button>
+        <button id="free-text-toggle" class="action-btn" style="display: none;">Free Type</button>
+        <button id="keyboard-toggle" class="action-btn" style="display: none;">Keyboard</button>
+    </div>
 
     <div id="text-display">
         <div id="typed-text"></div>
@@ -315,8 +312,12 @@
         const textDisplay = document.getElementById('typed-text');
         const modeButtons = document.querySelectorAll('.mode-btn');
         const mobileInput = document.getElementById('mobile-input');
-        const keyboardToggle = document.getElementById('keyboard-toggle');
+        
+        // Control buttons
         const resetBtn = document.getElementById('reset-btn');
+        const keyboardToggle = document.getElementById('keyboard-toggle');
+        const freeTextToggle = document.getElementById('free-text-toggle');
+        
         const traceOverlay = document.getElementById('trace-overlay');
         const traceLetter = document.getElementById('trace-letter');
         const traceCanvas = document.getElementById('trace-canvas');
@@ -340,6 +341,7 @@
         let currentMode = 1;
         let isMobile = false;
         let keyboardVisible = false;
+        let isChallengeMode = true; // NEW: Controls desktop behavior
 
         // Tracing/Typing variables
         let isTracing = false;
@@ -348,7 +350,7 @@
         let currentTraceLetter = 'A'; // The target letter to trace or type
         
         // Expanded to include both cases and numbers
-        const traceLetters = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'.split('');
+        const traceLetters = 'AaBbCcDdEeFfGfHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789'.split('');
         let shuffledLetters = [];
         let letterIndex = 0;
         let isFirstRun = true;
@@ -451,11 +453,14 @@
             currentTraceLetter = getNextLetter();
             traceLetter.textContent = currentTraceLetter;
             
-            // Only clear and prepare analysis if we are in tracing mode
-            if (isMobile) {
+            // Only clear and prepare analysis if we are in tracing mode or challenge mode
+            if (isMobile || isChallengeMode) {
                 traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
                 requestAnimationFrame(prepareTraceAnalysis);
             }
+            
+            // Show/Hide letter based on mode
+            traceOverlay.style.display = (isMobile || isChallengeMode) ? 'block' : 'none';
         }
 
         function spawnParticles(char, x = Math.random() * width, y = Math.random() * height * 0.5) {
@@ -486,6 +491,16 @@
             if (mode === 2) initStars(); if (mode === 3) initBubbles(); if (mode === 6) initPipes(); if (mode === 7) initMatrix(); if (mode === 8) initDVD(); if (mode === 10) initWorms();
             fireParticles = []; fireworks = []; fireworkParticles = [];
         }
+        
+        function toggleChallengeMode() {
+            isChallengeMode = !isChallengeMode;
+            freeTextToggle.textContent = isChallengeMode ? 'Free Type' : 'Challenge';
+            showNextTraceLetter(); // Updates the visibility of the letter overlay
+            // Clear text when switching modes for clarity
+            typedString = '';
+            textDisplay.innerHTML = '';
+            targetEnergy = 0.5;
+        }
 
         // --- Keyboard Input (Desktop & Mobile fallback) ---
 
@@ -506,17 +521,22 @@
                     spawnParticles(e.key);
                 }
 
-                // Correct key check
-                if (e.key.toUpperCase() === currentTraceLetter.toUpperCase()) {
-                    e.preventDefault(); // Stop the character from being processed by normal input
-                    
-                    flashLetter();
-                    
-                    // Add the character as typed (respecting case, though the challenge is case-insensitive)
-                    updateText(e.key); 
-                    
-                    // Move to the next letter
-                    setTimeout(() => showNextTraceLetter(), 300);
+                if (isChallengeMode) {
+                    // Challenge Mode: Check for correct key match
+                    if (e.key.toUpperCase() === currentTraceLetter.toUpperCase()) {
+                        e.preventDefault(); // Stop the character from being processed by normal input
+                        
+                        flashLetter();
+                        
+                        // Add the character as typed (respecting case, though the challenge is case-insensitive)
+                        updateText(e.key); 
+                        
+                        // Move to the next letter
+                        setTimeout(() => showNextTraceLetter(), 300);
+                    }
+                } else {
+                    // Free Text Mode: Accept any character
+                    updateText(e.key);
                 }
             } else if (e.key === 'Backspace') {
                 updateText('Backspace');
@@ -532,31 +552,37 @@
         }
         
         function setupInputMode() {
+            // Hide all special controls first
+            resetBtn.style.display = 'none';
+            keyboardToggle.style.display = 'none';
+            freeTextToggle.style.display = 'none';
+            
             if (isMobile) {
                 // MOBILE: Enable Tracing UI and Input
                 traceCanvas.style.display = 'block';
                 traceHint.style.display = 'block';
-                keyboardToggle.style.display = 'block'; 
-                resetBtn.style.display = 'block';
+                traceOverlay.style.display = 'block';
+                keyboardToggle.style.display = 'inline-block'; 
+                resetBtn.style.display = 'inline-block';
                 
-                // Add mobile input listeners (already set up below)
-                traceCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const touch = e.touches[0]; handleTraceStart(touch.clientX, touch.clientY); }, { passive: false });
-                traceCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); const touch = e.touches[0]; handleTraceMove(touch.clientX, touch.clientY); }, { passive: false });
-                traceCanvas.addEventListener('touchend', (e) => { e.preventDefault(); handleTraceEnd(); }, { passive: false });
-                traceCanvas.addEventListener('touchcancel', () => handleTraceEnd());
-                traceCanvas.addEventListener('mousedown', (e) => handleTraceStart(e.clientX, e.clientY));
-                traceCanvas.addEventListener('mousemove', (e) => handleTraceMove(e.clientX, e.clientY));
-                traceCanvas.addEventListener('mouseup', () => handleTraceEnd());
-                traceCanvas.addEventListener('mouseleave', () => handleTraceEnd());
-                
+                // Tracing logic is active for mobile
             } else {
-                // DESKTOP: Disable Tracing UI, Enable Keyboard Challenge UI
+                // DESKTOP: Disable Tracing UI, Enable Keyboard Challenge UI & Controls
                 traceCanvas.style.display = 'none';
                 traceHint.style.display = 'none';
-                keyboardToggle.style.display = 'none';
-                resetBtn.style.display = 'none'; // Reset button is only for clearing paint on mobile
+                
+                // Show desktop controls
+                resetBtn.style.display = 'inline-block';
+                freeTextToggle.style.display = 'inline-block';
+                
+                // Ensure challenge mode starts enabled for desktop
+                isChallengeMode = true;
+                freeTextToggle.textContent = 'Free Type';
+                
+                showNextTraceLetter(); // Show the first letter
                 
                 // Set up the universal keydown listener for the challenge mode
+                document.removeEventListener('keydown', handleDesktopKeydown); // Prevent duplicates
                 document.addEventListener('keydown', handleDesktopKeydown);
             }
         }
@@ -945,6 +971,7 @@
             traceCanvas.width = width; traceCanvas.height = height;
             prepareTraceAnalysis();
             initStars(); initBubbles(); initPipes(); initMatrix(); initDVD(); initWorms();
+            showNextTraceLetter(); // Recalculate letter position
         }
 
         function animate() {
@@ -985,6 +1012,15 @@
                 }
             } 
         }
+        
+        function handleReset() {
+            typedString = '';
+            textDisplay.innerHTML = '';
+            if (isMobile) traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+            targetEnergy += 0.5; // Little burst of energy on clear
+            if (!isMobile && isChallengeMode) showNextTraceLetter();
+        }
+
 
         // --- Event Listeners ---
         
@@ -1003,15 +1039,9 @@
             else { mobileInput.focus(); keyboardToggle.textContent = 'Hide'; keyboardVisible = true; }
         });
 
-        resetBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            typedString = '';
-            textDisplay.innerHTML = '';
-            // Clear tracing paint as well
-            if (isMobile) traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
-            targetEnergy += 0.5; // Little burst of energy on clear
-        });
+        resetBtn.addEventListener('click', handleReset);
+        
+        freeTextToggle.addEventListener('click', toggleChallengeMode);
 
         mobileInput.addEventListener('input', (e) => { const value = e.target.value; if (value.length > 0) updateText(value[value.length - 1]); if (mobileInput.value.length > 5) mobileInput.value = mobileInput.value.slice(-2); });
         mobileInput.addEventListener('keydown', (e) => { if (e.key === 'Backspace') updateText('Backspace'); });
@@ -1037,7 +1067,6 @@
         resize(); 
         shuffleLetters(); 
         detectMobile(); 
-        showNextTraceLetter(); // Show first letter
         setMode(1); 
         animate();
     </script>

@@ -172,6 +172,27 @@
             background: rgba(255,255,255,0.3);
         }
 
+        /* Reset button for mobile */
+        #reset-btn {
+            position: fixed;
+            bottom: 10px;
+            right: 90px;
+            z-index: 25;
+            background: rgba(255, 80, 80, 0.25);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: rgba(255,255,255,0.9);
+            font-size: 11px;
+            cursor: pointer;
+            font-family: inherit;
+            display: none;
+        }
+
+        #reset-btn:active {
+            background: rgba(255, 80, 80, 0.4);
+        }
+
         /* Trace letter overlay for mobile */
         #trace-overlay {
             position: fixed;
@@ -266,6 +287,7 @@
     <canvas id="trace-canvas"></canvas>
     <div id="trace-hint">Trace the letter with your finger!</div>
 
+    <button id="reset-btn">Reset</button>
     <button id="keyboard-toggle">Keyboard</button>
 
     <div id="text-display">
@@ -279,11 +301,19 @@
         const modeButtons = document.querySelectorAll('.mode-btn');
         const mobileInput = document.getElementById('mobile-input');
         const keyboardToggle = document.getElementById('keyboard-toggle');
+        const resetBtn = document.getElementById('reset-btn');
         const traceOverlay = document.getElementById('trace-overlay');
         const traceLetter = document.getElementById('trace-letter');
         const traceCanvas = document.getElementById('trace-canvas');
         const traceHint = document.getElementById('trace-hint');
         const traceCtx = traceCanvas.getContext('2d');
+
+        // Analysis canvas for checking fill percentage (scaled down for performance)
+        const hitCanvas = document.createElement('canvas');
+        const hitCtx = hitCanvas.getContext('2d');
+        const checkCanvas = document.createElement('canvas');
+        const checkCtx = checkCanvas.getContext('2d');
+        const SCALE_FACTOR = 0.2; // Analyze at 20% resolution
 
         let width, height;
         let time = 0;
@@ -304,9 +334,16 @@
         const traceLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
         let shuffledLetters = [];
         let letterIndex = 0;
+        let isFirstRun = true;
+        let totalLetterPixels = 0; // Number of pixels in the target letter
 
         function shuffleLetters() {
             shuffledLetters = [...traceLetters].sort(() => Math.random() - 0.5);
+            if (isFirstRun) {
+                const startSequence = ['I', 'L', 'O', 'V', 'E', 'Y', 'O', 'U'];
+                shuffledLetters = [...startSequence, ...shuffledLetters];
+                isFirstRun = false;
+            }
             letterIndex = 0;
         }
 
@@ -317,10 +354,74 @@
             return shuffledLetters[letterIndex++];
         }
 
+        function prepareTraceAnalysis() {
+            // Set analysis canvas sizes
+            hitCanvas.width = width * SCALE_FACTOR;
+            hitCanvas.height = height * SCALE_FACTOR;
+            checkCanvas.width = width * SCALE_FACTOR;
+            checkCanvas.height = height * SCALE_FACTOR;
+
+            // Clear hit canvas
+            hitCtx.clearRect(0, 0, hitCanvas.width, hitCanvas.height);
+            
+            // Draw the target letter onto hitCanvas
+            // We need to match the DOM styling as closely as possible
+            const fontSize = (window.innerWidth >= 700 ? 40 : 50) * (width / 100); // Convert vw to px
+            hitCtx.font = `bold ${fontSize * SCALE_FACTOR}px Arial, sans-serif`;
+            hitCtx.fillStyle = 'red';
+            hitCtx.textAlign = 'center';
+            hitCtx.textBaseline = 'middle';
+            
+            // Note: The DOM element has translate(-50%, -60%). 
+            // -60% of height shifts it up slightly above middle.
+            // We approximate this position.
+            const x = hitCanvas.width / 2;
+            const y = hitCanvas.height * 0.45; // Approx for -60% shift
+            
+            hitCtx.fillText(currentTraceLetter, x, y);
+
+            // Count target pixels
+            const imgData = hitCtx.getImageData(0, 0, hitCanvas.width, hitCanvas.height);
+            const data = imgData.data;
+            totalLetterPixels = 0;
+            // Iterate alpha channel (every 4th byte)
+            for (let i = 3; i < data.length; i += 4) {
+                if (data[i] > 100) { // If pixel is somewhat opaque
+                    totalLetterPixels++;
+                }
+            }
+        }
+
+        function checkTraceProgress() {
+            if (totalLetterPixels === 0) return 0;
+
+            // Draw current trace onto checkCanvas
+            checkCtx.clearRect(0, 0, checkCanvas.width, checkCanvas.height);
+            checkCtx.drawImage(traceCanvas, 0, 0, checkCanvas.width, checkCanvas.height);
+
+            const hitData = hitCtx.getImageData(0, 0, hitCanvas.width, hitCanvas.height).data;
+            const checkData = checkCtx.getImageData(0, 0, checkCanvas.width, checkCanvas.height).data;
+            
+            let coveredPixels = 0;
+            
+            // Check intersection
+            for (let i = 3; i < hitData.length; i += 4) {
+                // If this pixel is part of the letter (in hitData) 
+                // AND it has been painted by user (in checkData)
+                if (hitData[i] > 100 && checkData[i] > 50) {
+                    coveredPixels++;
+                }
+            }
+
+            return coveredPixels / totalLetterPixels;
+        }
+
         function showNextTraceLetter() {
             currentTraceLetter = getNextLetter();
             traceLetter.textContent = currentTraceLetter;
             traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+            // Wait for resize/layout to settle then prepare mask
+            requestAnimationFrame(prepareTraceAnalysis);
         }
 
         class Particle {
@@ -711,6 +812,7 @@
         function resize() {
             width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight;
             traceCanvas.width = width; traceCanvas.height = height;
+            prepareTraceAnalysis();
             initStars(); initBubbles(); initPipes(); initMatrix(); initDVD(); initWorms();
         }
 
@@ -748,7 +850,14 @@
         // INPUT HANDLING
         function detectMobile() {
             isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            if (isMobile) { keyboardToggle.style.display = 'block'; traceOverlay.style.display = 'block'; traceCanvas.style.display = 'block'; traceHint.style.display = 'block'; showNextTraceLetter(); }
+            if (isMobile) { 
+                keyboardToggle.style.display = 'block'; 
+                resetBtn.style.display = 'block';
+                traceOverlay.style.display = 'block'; 
+                traceCanvas.style.display = 'block'; 
+                traceHint.style.display = 'block'; 
+                showNextTraceLetter(); 
+            }
         }
 
         document.addEventListener('keydown', (e) => { if (e.key === ' ') e.preventDefault(); if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return; updateText(e.key); });
@@ -757,6 +866,16 @@
             e.preventDefault(); e.stopPropagation();
             if (keyboardVisible) { mobileInput.blur(); keyboardToggle.textContent = 'Keyboard'; keyboardVisible = false; }
             else { mobileInput.focus(); keyboardToggle.textContent = 'Hide'; keyboardVisible = true; }
+        });
+
+        resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            typedString = '';
+            textDisplay.innerHTML = '';
+            // Clear tracing paint as well
+            traceCtx.clearRect(0, 0, traceCanvas.width, traceCanvas.height);
+            targetEnergy += 0.5; // Little burst of energy on clear
         });
 
         mobileInput.addEventListener('input', (e) => { const value = e.target.value; if (value.length > 0) updateText(value[value.length - 1]); if (mobileInput.value.length > 5) mobileInput.value = mobileInput.value.slice(-2); });
@@ -770,12 +889,23 @@
         function handleTraceMove(x, y) {
             if (!isTracing) return;
             targetEnergy = Math.min(1, targetEnergy + 0.02); hueBase = (hueBase + 2) % 360;
-            traceCtx.beginPath(); traceCtx.strokeStyle = `hsla(${hueBase}, 100%, 60%, 0.8)`; traceCtx.lineWidth = 8; traceCtx.lineCap = 'round'; traceCtx.moveTo(lastTraceX, lastTraceY); traceCtx.lineTo(x, y); traceCtx.stroke();
-            traceCtx.beginPath(); traceCtx.strokeStyle = `hsla(${hueBase}, 100%, 70%, 0.3)`; traceCtx.lineWidth = 20; traceCtx.moveTo(lastTraceX, lastTraceY); traceCtx.lineTo(x, y); traceCtx.stroke();
+            traceCtx.beginPath(); traceCtx.strokeStyle = `hsla(${hueBase}, 100%, 60%, 0.8)`; traceCtx.lineWidth = 20; traceCtx.lineCap = 'round'; traceCtx.moveTo(lastTraceX, lastTraceY); traceCtx.lineTo(x, y); traceCtx.stroke();
+            traceCtx.beginPath(); traceCtx.strokeStyle = `hsla(${hueBase}, 100%, 70%, 0.3)`; traceCtx.lineWidth = 35; traceCtx.moveTo(lastTraceX, lastTraceY); traceCtx.lineTo(x, y); traceCtx.stroke();
             if (Math.random() < 0.3) particles.push(new Particle(x, y, hueBase, { size: Math.random() * 15 + 5, speedX: (Math.random() - 0.5) * 4, speedY: (Math.random() - 0.5) * 4, gravity: 0.02 }));
             lastTraceX = x; lastTraceY = y;
         }
-        function handleTraceEnd() { if (isTracing) { isTracing = false; updateText(currentTraceLetter); setTimeout(() => showNextTraceLetter(), 300); } }
+        function handleTraceEnd() { 
+            if (isTracing) { 
+                isTracing = false; 
+                
+                // Check coverage on lift
+                const coverage = checkTraceProgress();
+                if (coverage >= 0.8) {
+                    updateText(currentTraceLetter); 
+                    setTimeout(() => showNextTraceLetter(), 300);
+                }
+            } 
+        }
 
         traceCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const touch = e.touches[0]; handleTraceStart(touch.clientX, touch.clientY); }, { passive: false });
         traceCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); const touch = e.touches[0]; handleTraceMove(touch.clientX, touch.clientY); }, { passive: false });
@@ -789,7 +919,12 @@
         document.addEventListener('contextmenu', e => e.preventDefault());
 
         window.addEventListener('resize', resize);
-        resize(); shuffleLetters(); detectMobile(); setMode(1); animate();
+        // Initial setup calls
+        resize(); 
+        shuffleLetters(); 
+        detectMobile(); 
+        setMode(1); 
+        animate();
     </script>
 </body>
 </html>

@@ -628,7 +628,7 @@
             },
             christmas: {
                 name: "Xmas",
-                icon: "🎅",
+                icon: "🎅🏽",
                 type: 'flip',
                 defaultFacing: 'right', // 🎅 points right/forward
                 bg: (ctx, w, h) => {
@@ -645,7 +645,9 @@
                     ctx.fillStyle = '#fff';
                     ctx.fillRect(0, h * 0.8, w, h * 0.2);
                 },
-                playerEmoji: '🎅',
+                playerEmoji: '🎅🏽',
+                characters: ['🎅🏽', '🤶🏽'], // Santa and Ms Claus medium skin tone
+                charIndex: 0,
                 collectibleEmoji: '🎁',
                 collectibleColor: '#F44336'
             }
@@ -701,6 +703,13 @@
             player.active = false;
             player.angle = 0;
 
+            // Reset character rotation if applicable
+            if (currentTheme.characters) {
+                currentTheme.charIndex = currentTheme.characters.length - 1;
+                // We set it to the last index so the first call to setTargetCount (which increments)
+                // will cycle it to 0 (the first character).
+            }
+
             if (state === 'PREGAME') {
                 startCountdown();
             } else {
@@ -717,6 +726,12 @@
         }
 
         function setTargetCount(n) {
+            // Character rotation logic
+            if (currentTheme && currentTheme.characters) {
+                currentTheme.charIndex = (currentTheme.charIndex + 1) % currentTheme.characters.length;
+                currentTheme.playerEmoji = currentTheme.characters[currentTheme.charIndex];
+            }
+
             targetCount = n;
             collectedCount = 0;
             updateScore();
@@ -866,53 +881,19 @@
 
             // Rotation Logic
             if (currentTheme.type === 'rotate') {
-                // Rotate to face direction. 
-                // We need to know where the sprite points by default (offset).
-                // If sprite points Right (0), we rotate by angle.
-                // If sprite points Up-Right (PI/4), we rotate by angle - PI/4.
-                // Wait, if sprite points 45deg, and we want it to point 0deg, we rotate -45deg.
-                // So we should SUBTRACT the offset? 
-                // Let's check: Rocket points 45deg. Moving Right (0deg). 
-                // We want visual to be 0deg. 
-                // If we rotate by (0 - 45deg), the sprite (at 45) becomes 0. Correct.
-                // So rotation = angle - offset.
-
-                // Wait, my previous code was `angle + offset`.
-                // If offset was PI/4. Angle 0. Rotation PI/4.
-                // Sprite (at 45) rotated by 45 becomes 90 (Up). Wrong.
-                // So it should be `angle - offset`.
-
-                // Let's re-evaluate the offset definition.
-                // If I defined offset as "How much to ADD to make it right", then + is correct.
-                // Rocket points 45. To make it point 0 (Right), I need to rotate -45.
-                // So if offset = -PI/4, then angle + offset works.
-
-                // Let's just use `angle - defaultAngle`.
-                // Rocket defaultAngle = PI/4.
-                // Rotation = angle - defaultAngle.
-
                 let defaultAngle = 0;
                 if (currentTheme.defaultFacing === 'up-right') defaultAngle = Math.PI / 4;
                 if (currentTheme.defaultFacing === 'up') defaultAngle = Math.PI / 2;
-                if (currentTheme.defaultFacing === 'left') defaultAngle = Math.PI; // Should not happen for rotators usually
+                if (currentTheme.defaultFacing === 'left') defaultAngle = Math.PI;
 
                 ctx.rotate(player.angle - defaultAngle);
 
             } else {
                 // Flip Logic (Side View)
-                // Determine if moving Left or Right
                 const isMovingLeft = Math.abs(player.angle) > Math.PI / 2;
                 const isMovingRight = !isMovingLeft;
 
                 const spriteFacesLeft = currentTheme.defaultFacing === 'left';
-
-                // We want the sprite to face the movement direction.
-                // If moving Left:
-                //   - If sprite faces Left: Normal (Scale 1, 1)
-                //   - If sprite faces Right: Flip (Scale -1, 1)
-                // If moving Right:
-                //   - If sprite faces Left: Flip (Scale -1, 1)
-                //   - If sprite faces Right: Normal (Scale 1, 1)
 
                 let shouldFlip = false;
 

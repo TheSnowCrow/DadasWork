@@ -20,7 +20,11 @@ Every keystroke or trace creates colorful particle effects and energizes one of 
 
 ## 🚀 Try It Now
 
-Just open `index.html` in any modern browser - no installation, no dependencies, no build process!
+### Magic Typing
+Open `index.html` to play the typing game.
+
+### Drive & Collect (New!)
+Open `drive.html` to play the touch-based driving game for little ones.
 
 Or visit the [live demo](#) if you have it hosted.
 

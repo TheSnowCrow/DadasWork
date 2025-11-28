@@ -2,11 +2,15 @@
 
 A colorful, interactive typing visualizer for kids. Type anything and watch the screen come alive with beautiful animations!
 
-My kid always wants to 'help' with Dada's Work and type on the computer.  I pull this up and let him go to town!
+My son always wants to 'help' with Dada's Work and type on the computer.  I had the idea of making a more fun screen for him to type on and this game was born!  He also is tracing letters at preschool so I had the idea to add that to a mobile version.  He loves it!  I hope your kids enjoy too!
+
+## Contributions Welcome!
+
+If anyone wants a fun little project create a new visualization to go in the background!  Send us a PR - We'd love it!
 
 ## Demo
 
-Open `index.html` in any browser or visit your GitHub Pages URL.
+Open `index.html` in any browser or visit [GitHub Page](https://thesnowcrow.github.io/DadasWork/)
 
 ## Features
 
@@ -37,3 +41,5 @@ Open `index.html` in any browser or visit your GitHub Pages URL.
 ## License
 
 MIT - Feel free to use and modify!
+
+

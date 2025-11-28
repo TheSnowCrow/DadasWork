@@ -372,25 +372,19 @@
         let countdownValue = 10;
 
         // Themes Configuration
-        // Rotation Types: 
-        // 'rotate': Rotates the sprite to face direction. 
-        // 'flip': Flips sprite horizontally based on movement.
-        // defaultFacing: 'left' (e.g. 🦕) or 'right' (e.g. 🏎️) or 'up-right' (e.g. 🚀)
 
         const themes = {
             rocket: {
                 name: "Space",
                 icon: "🚀",
                 type: 'rotate',
-                defaultFacing: 'up-right', // 🚀 points 45deg
-                offset: Math.PI / 4, // Visual offset of the emoji itself
+                defaultFacing: 'up-right',
+                offset: Math.PI / 4,
                 bg: (ctx, w, h) => {
-                    ctx.fillStyle = '#0b1026';
-                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#0b1026'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = '#fff';
                     for (let i = 0; i < 50; i++) {
-                        let x = (Math.sin(i * 132.1) * 43758.5453) % w;
-                        let y = (Math.cos(i * 12.1) * 1234.5) % h;
+                        let x = (Math.sin(i * 132.1) * 43758.5453) % w; let y = (Math.cos(i * 12.1) * 1234.5) % h;
                         if (x < 0) x += w; if (y < 0) y += h;
                         ctx.globalAlpha = Math.random() * 0.5 + 0.5;
                         ctx.beginPath(); ctx.arc(x, y, Math.random() * 2, 0, Math.PI * 2); ctx.fill();
@@ -402,19 +396,125 @@
                 collectibleColor: '#FFD700',
                 preGame: true
             },
+            soccer: {
+                name: "Soccer",
+                icon: "⚽",
+                type: 'rotate',
+                defaultFacing: 'right', // Ball has no real direction but rotates
+                bg: (ctx, w, h) => {
+                    ctx.fillStyle = '#4CAF50'; ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 4;
+                    // Field lines
+                    ctx.beginPath(); ctx.arc(w / 2, h / 2, 80, 0, Math.PI * 2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
+                    ctx.beginPath(); ctx.rect(0, 0, w, h); ctx.stroke();
+                },
+                playerEmoji: '⚽',
+                collectibleEmoji: '🥅',
+                collectibleColor: '#fff'
+            },
+            basketball: {
+                name: "Hoops",
+                icon: "🏀",
+                type: 'rotate',
+                defaultFacing: 'right',
+                bg: (ctx, w, h) => {
+                    ctx.fillStyle = '#E65100'; ctx.fillRect(0, 0, w, h); // Wood color base
+                    // Wood planks
+                    ctx.fillStyle = '#EF6C00';
+                    for (let i = 0; i < w; i += 60) ctx.fillRect(i, 0, 5, h);
+                    // Court lines
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.arc(w / 2, h / 2, 80, 0, Math.PI * 2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h); ctx.stroke();
+                },
+                playerEmoji: '🏀',
+                collectibleEmoji: '🗑️', // Net/Basket
+                collectibleColor: '#FF9800'
+            },
+            surfer: {
+                name: "Surfer",
+                icon: "🏄",
+                type: 'flip',
+                defaultFacing: 'left', // 🏄 points left
+                bg: (ctx, w, h) => {
+                    ctx.fillStyle = '#00BCD4'; ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#B2EBF2';
+                    for (let i = 0; i < h; i += 80) {
+                        let offset = Math.sin(i / 50 + Date.now() / 1000) * 40;
+                        ctx.beginPath(); ctx.ellipse(w / 2 + offset, i, w, 30, 0, 0, Math.PI * 2); ctx.fill();
+                    }
+                },
+                playerEmoji: '🏄',
+                collectibleEmoji: '🌊',
+                collectibleColor: '#E0F7FA'
+            },
+            school: {
+                name: "School",
+                icon: "🎒",
+                type: 'flip',
+                defaultFacing: 'left', // 🧑‍🎓 points left
+                bg: (ctx, w, h) => {
+                    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+                    // Notebook lines
+                    ctx.strokeStyle = '#90CAF9'; ctx.lineWidth = 2;
+                    for (let i = 60; i < h; i += 40) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke(); }
+                    ctx.strokeStyle = '#FFCDD2'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(60, 0); ctx.lineTo(60, h); ctx.stroke();
+                },
+                playerEmoji: '🧑‍🎓',
+                collectibleEmoji: '📚',
+                collectibleColor: '#2196F3'
+            },
+            baby: {
+                name: "Baby",
+                icon: "👶",
+                type: 'flip',
+                defaultFacing: 'left', // 👶 points left
+                bg: (ctx, w, h) => {
+                    // Pastel gradient
+                    const g = ctx.createLinearGradient(0, 0, w, h);
+                    g.addColorStop(0, '#F8BBD0'); g.addColorStop(1, '#B3E5FC');
+                    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+                    // Polka dots
+                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    for (let i = 0; i < 10; i++) {
+                        let x = (i * 100) % w; let y = (i * 70) % h;
+                        ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill();
+                    }
+                },
+                playerEmoji: '👶',
+                collectibleEmoji: '❤️',
+                collectibleColor: '#E91E63'
+            },
+            safari: {
+                name: "Safari",
+                icon: "🦁",
+                type: 'flip',
+                defaultFacing: 'left', // 🚙 points left
+                bg: (ctx, w, h) => {
+                    ctx.fillStyle = '#C5E1A5'; ctx.fillRect(0, 0, w, h); // Grass
+                    // Acacia trees (simple)
+                    ctx.fillStyle = '#558B2F';
+                    for (let i = 0; i < 5; i++) {
+                        let x = (i * 200 + 50) % w; let y = (i * 150 + 100) % h;
+                        ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.fill();
+                    }
+                },
+                playerEmoji: '🚙',
+                collectibleEmoji: ['🦁', '🐘', '🦒', '🦓', '🦛'], // Mixed
+                collectibleColor: '#FFC107'
+            },
             plane: {
                 name: "Sky",
                 icon: "✈️",
                 type: 'rotate',
-                defaultFacing: 'right', // ✈️ usually points right or up-right. Let's assume right for rotation.
-                offset: 0,
+                defaultFacing: 'right',
                 bg: (ctx, w, h) => {
-                    ctx.fillStyle = '#87CEEB';
-                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = 'rgba(255,255,255,0.6)';
                     for (let i = 0; i < 8; i++) {
-                        let x = (w / 8 * i + Date.now() / 50) % (w + 200) - 100;
-                        let y = (Math.sin(i) * 100 + h / 2);
+                        let x = (w / 8 * i + Date.now() / 50) % (w + 200) - 100; let y = (Math.sin(i) * 100 + h / 2);
                         ctx.beginPath(); ctx.arc(x, y, 40, 0, Math.PI * 2); ctx.arc(x + 30, y - 10, 50, 0, Math.PI * 2); ctx.arc(x + 60, y, 40, 0, Math.PI * 2); ctx.fill();
                     }
                 },
@@ -426,15 +526,12 @@
                 name: "Garden",
                 icon: "🐞",
                 type: 'rotate',
-                defaultFacing: 'up', // 🐞 points up
-                offset: Math.PI / 2,
+                defaultFacing: 'up',
                 bg: (ctx, w, h) => {
-                    ctx.fillStyle = '#4CAF50';
-                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillStyle = '#4CAF50'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = '#388E3C';
                     for (let i = 0; i < 10; i++) {
-                        let x = (Math.cos(i) * w);
-                        let y = (Math.sin(i) * h);
+                        let x = (Math.cos(i) * w); let y = (Math.sin(i) * h);
                         if (x < 0) x += w; if (y < 0) y += h;
                         ctx.beginPath(); ctx.ellipse(x, y, 60, 30, i, 0, Math.PI * 2); ctx.fill();
                     }
@@ -447,17 +544,12 @@
                 name: "Race",
                 icon: "🏎️",
                 type: 'flip',
-                defaultFacing: 'right', // 🏎️ points right
+                defaultFacing: 'right',
                 bg: (ctx, w, h) => {
-                    ctx.fillStyle = '#66BB6A';
-                    ctx.fillRect(0, 0, w, h);
-                    ctx.strokeStyle = '#555';
-                    ctx.lineWidth = Math.min(w, h) * 0.3;
-                    ctx.lineCap = 'round';
+                    ctx.fillStyle = '#66BB6A'; ctx.fillRect(0, 0, w, h);
+                    ctx.strokeStyle = '#555'; ctx.lineWidth = Math.min(w, h) * 0.3; ctx.lineCap = 'round';
                     ctx.beginPath(); ctx.ellipse(w / 2, h / 2, w * 0.35, h * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 5;
-                    ctx.setLineDash([20, 20]);
+                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 5; ctx.setLineDash([20, 20]);
                     ctx.beginPath(); ctx.ellipse(w / 2, h / 2, w * 0.35, h * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
                     ctx.setLineDash([]);
                 },
@@ -469,7 +561,7 @@
                 name: "Dino",
                 icon: "🦕",
                 type: 'flip',
-                defaultFacing: 'left', // 🦕 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#87CEEB'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = '#8B4513'; ctx.fillRect(0, h * 0.6, w, h * 0.4);
@@ -488,7 +580,7 @@
                 name: "Farm",
                 icon: "🚜",
                 type: 'flip',
-                defaultFacing: 'left', // 🚜 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#eecfa1'; ctx.fillRect(0, 0, w, h);
                     ctx.strokeStyle = '#8B4513'; ctx.lineWidth = 2;
@@ -502,7 +594,7 @@
                 name: "Pond",
                 icon: "🦆",
                 type: 'flip',
-                defaultFacing: 'left', // 🦆 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#4fc3f7'; ctx.fillRect(0, 0, w, h);
                     ctx.strokeStyle = '#81d4fa'; ctx.lineWidth = 2;
@@ -519,7 +611,7 @@
                 name: "Ocean",
                 icon: "🐠",
                 type: 'flip',
-                defaultFacing: 'left', // 🐠 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#006994'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = 'rgba(255,255,255,0.2)';
@@ -537,7 +629,7 @@
                 name: "Train",
                 icon: "🚂",
                 type: 'flip',
-                defaultFacing: 'left', // 🚂 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#8BC34A'; ctx.fillRect(0, 0, w, h);
                     ctx.strokeStyle = '#5D4037'; ctx.lineWidth = 40;
@@ -556,7 +648,7 @@
                 name: "Magic",
                 icon: "🦄",
                 type: 'flip',
-                defaultFacing: 'left', // 🦄 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#F3E5F5'; ctx.fillRect(0, 0, w, h);
                     for (let i = 0; i < 3; i++) {
@@ -575,7 +667,7 @@
                 name: "Boat",
                 icon: "🚤",
                 type: 'flip',
-                defaultFacing: 'left', // 🚤 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#0277BD'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = '#4FC3F7';
@@ -592,7 +684,7 @@
                 name: "Spooky",
                 icon: "👻",
                 type: 'flip',
-                defaultFacing: 'right', // 👻 points forward/rightish
+                defaultFacing: 'right',
                 bg: (ctx, w, h) => {
                     ctx.fillStyle = '#212121'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = '#424242';
@@ -609,17 +701,13 @@
                 name: "Thanks",
                 icon: "🦃",
                 type: 'flip',
-                defaultFacing: 'left', // 🦃 points left
+                defaultFacing: 'left',
                 bg: (ctx, w, h) => {
-                    ctx.fillStyle = '#FFE0B2'; // Light Orange
-                    ctx.fillRect(0, 0, w, h);
-                    // Fall Leaves
+                    ctx.fillStyle = '#FFE0B2'; ctx.fillRect(0, 0, w, h);
                     const colors = ['#FF5722', '#FFC107', '#795548'];
                     for (let i = 0; i < 15; i++) {
-                        let x = (Math.sin(i) * w + Date.now() / 100) % w;
-                        let y = (Math.cos(i) * h + Date.now() / 100) % h;
-                        ctx.fillStyle = colors[i % 3];
-                        ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
+                        let x = (Math.sin(i) * w + Date.now() / 100) % w; let y = (Math.cos(i) * h + Date.now() / 100) % h;
+                        ctx.fillStyle = colors[i % 3]; ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fill();
                     }
                 },
                 playerEmoji: '🦃',
@@ -630,23 +718,18 @@
                 name: "Xmas",
                 icon: "🎅🏽",
                 type: 'flip',
-                defaultFacing: 'right', // 🎅 points right/forward
+                defaultFacing: 'right',
                 bg: (ctx, w, h) => {
-                    ctx.fillStyle = '#B3E5FC'; // Ice Blue
-                    ctx.fillRect(0, 0, w, h);
-                    // Snow
+                    ctx.fillStyle = '#B3E5FC'; ctx.fillRect(0, 0, w, h);
                     ctx.fillStyle = 'white';
                     for (let i = 0; i < 30; i++) {
-                        let x = (Math.sin(i) * w + Date.now() / 50) % w;
-                        let y = (i * 50 + Date.now() / 20) % h;
+                        let x = (Math.sin(i) * w + Date.now() / 50) % w; let y = (i * 50 + Date.now() / 20) % h;
                         ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
                     }
-                    // Ground
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(0, h * 0.8, w, h * 0.2);
+                    ctx.fillStyle = '#fff'; ctx.fillRect(0, h * 0.8, w, h * 0.2);
                 },
                 playerEmoji: '🎅🏽',
-                characters: ['🎅🏽', '🤶🏽'], // Santa and Ms Claus medium skin tone
+                characters: ['🎅🏽', '🤶🏽'],
                 charIndex: 0,
                 collectibleEmoji: '🎁',
                 collectibleColor: '#F44336'
@@ -703,11 +786,8 @@
             player.active = false;
             player.angle = 0;
 
-            // Reset character rotation if applicable
             if (currentTheme.characters) {
                 currentTheme.charIndex = currentTheme.characters.length - 1;
-                // We set it to the last index so the first call to setTargetCount (which increments)
-                // will cycle it to 0 (the first character).
             }
 
             if (state === 'PREGAME') {
@@ -726,7 +806,6 @@
         }
 
         function setTargetCount(n) {
-            // Character rotation logic
             if (currentTheme && currentTheme.characters) {
                 currentTheme.charIndex = (currentTheme.charIndex + 1) % currentTheme.characters.length;
                 currentTheme.playerEmoji = currentTheme.characters[currentTheme.charIndex];
@@ -759,7 +838,14 @@
                     if (!tooClose) valid = true;
                     attempts++;
                 }
-                collectibles.push({ x, y, collected: false, scale: 0, targetScale: 1 });
+
+                // Handle mixed collectibles (Safari)
+                let emoji = currentTheme.collectibleEmoji;
+                if (Array.isArray(emoji)) {
+                    emoji = emoji[Math.floor(Math.random() * emoji.length)];
+                }
+
+                collectibles.push({ x, y, collected: false, scale: 0, targetScale: 1, emoji: emoji });
             }
         }
 
@@ -870,7 +956,9 @@
                     if (c.scale < c.targetScale) c.scale += 0.1;
                     ctx.save(); ctx.translate(c.x, c.y); ctx.scale(c.scale, c.scale);
                     ctx.shadowColor = 'white'; ctx.shadowBlur = 10;
-                    ctx.font = '40px Arial'; ctx.fillText(currentTheme.collectibleEmoji, 0, 0);
+                    ctx.font = '40px Arial';
+                    // Use the specific emoji for this collectible (handles mixed arrays)
+                    ctx.fillText(c.emoji || currentTheme.collectibleEmoji, 0, 0);
                     ctx.restore();
                 }
             });

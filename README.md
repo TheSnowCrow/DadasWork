@@ -32,6 +32,13 @@ Or visit the [live demo](#) if you have it hosted.
 8. **DVD** - Nostalgic bouncing logo with color-changing impacts
 9. **Fireworks** - Spectacular explosions across the night sky
 10. **Worms** - Mystify-style flowing light trails
+11. **Ocean** - Underwater scene with fish that scatter when you type
+12. **Garden** - Growing flowers with fluttering butterflies
+13. **Rockets** - Space rockets launching with colorful trails
+14. **Music** - Bouncing musical notes with sound wave effects
+15. **Weather** - Rain, snow, and lightning that changes dynamically
+16. **Kaleidoscope** - Hypnotic geometric patterns with rotation
+17. **Swarm** - Particle swarms forming shapes (circle, spiral, heart, wave)
 
 ## 🎯 Features
 

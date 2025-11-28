@@ -1,8 +1,10 @@
-# ✨ Magic Typing!
+# Welcome to Dada's Work!
 
 An interactive typing game that teaches letters through beautiful visualizations and touch tracing. Perfect for kids learning to type and trace letters!
 
 My son always wants to 'help' with Dada's Work and type on the computer.  I had the idea of making a more fun screen for him to type on and this game was born!  He also is tracing letters at preschool so I had the idea to add that to a mobile version.  He loves it!  I hope your kids enjoy too!
+
+My suggestion for the online community is to use making small games for kids as a new benchmark as the models continue to improve. It is fascinating how the different models will take things different directions with very similar instructions. Really understanding the ideas behind game mechanics and what would make something fun takes a lot of nuance on top of the programming. I think this could be a useful measuring stick for the short term at least. If they all ended up getting to where we could all make games on the fly for kids just by thinking about them-well that would be a pretty cool world wouldn't it?
 
 ## Contributions Welcome!
 

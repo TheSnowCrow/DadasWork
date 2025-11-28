@@ -2,7 +2,11 @@
 
 An interactive typing game that teaches letters through beautiful visualizations and touch tracing. Perfect for kids learning to type and trace letters!
 
-![Magic Typing Demo](https://img.shields.io/badge/demo-live-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue)
+My son always wants to 'help' with Dada's Work and type on the computer.  I had the idea of making a more fun screen for him to type on and this game was born!  He also is tracing letters at preschool so I had the idea to add that to a mobile version.  He loves it!  I hope your kids enjoy too!
+
+## Contributions Welcome!
+
+If anyone wants a fun little project create a new visualization to go in the background!  Send us a PR - We'd love it!
 
 ## 🎮 What is this?
 

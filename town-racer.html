@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Town Adventure Racer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+            background: #87CEEB;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #87CEEB;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #score-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
+        }
+
+        #locations-visited {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        #progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid #999;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #emoji-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .emoji-burst {
+            position: absolute;
+            font-size: 48px;
+            animation: emoji-float 1.5s ease-out forwards;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes emoji-float {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(var(--tx), var(--ty)) scale(1.5);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--tx) * 2), calc(var(--ty) * 2)) scale(1);
+            }
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+
+        .screen.hidden {
+            display: none;
+        }
+
+        .screen h1 {
+            color: #FFD700;
+            font-size: 48px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .screen p {
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin: 10px 20px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 28px;
+            padding: 18px 48px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #touch-zones {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .touch-indicator {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .touch-indicator.active {
+            opacity: 1;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .screen h1 {
+                font-size: 36px;
+            }
+            button {
+                font-size: 24px;
+                padding: 15px 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+
+        <div id="ui-overlay">
+            <div id="score-panel">
+                <div id="locations-visited">Locations Visited: 0 / 8</div>
+                <div id="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+            </div>
+
+            <div id="controls-hint">
+                📱 Tap direction to move • ⌨️ Use arrow keys
+            </div>
+
+            <div id="emoji-container"></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>🏙️ Town Adventure Racer 🚗</h1>
+            <p>Drive around the playmat town and visit all the locations!</p>
+            <p>🏫 School • 🏢 Work • 🏠 Home • 📚 Library<br>🌳 Park • 🚒 Fire Station • 🏥 Hospital • 🏪 Store</p>
+            <button id="start-btn">START ADVENTURE</button>
+            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap the screen in any direction to move your car</p>
+        </div>
+
+        <!-- Win Screen -->
+        <div id="win-screen" class="screen hidden">
+            <h1>🎉 AMAZING! 🎉</h1>
+            <p style="font-size: 24px; color: #FFD700;">You visited all the locations!</p>
+            <p id="time-display"></p>
+            <button id="restart-btn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // TOWN ADVENTURE RACER - Playmat Style Game
+        // ============================================
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const emojiContainer = document.getElementById('emoji-container');
+
+        // Resize canvas to fill screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game State
+        const game = {
+            isPlaying: false,
+            startTime: 0,
+            car: {
+                x: 400,
+                y: 300,
+                width: 40,
+                height: 60,
+                speed: 0,
+                maxSpeed: 5,
+                acceleration: 0.3,
+                friction: 0.92,
+                angle: 0,
+                targetAngle: 0,
+                vx: 0,
+                vy: 0
+            },
+            camera: {
+                x: 0,
+                y: 0
+            },
+            visitedLocations: new Set(),
+            totalLocations: 8
+        };
+
+        // Town Map - Playmat Style Layout
+        const townMap = {
+            width: 2400,
+            height: 1800,
+            roads: [
+                // Horizontal roads
+                { x: 0, y: 300, width: 2400, height: 120 },
+                { x: 0, y: 800, width: 2400, height: 120 },
+                { x: 0, y: 1300, width: 2400, height: 120 },
+                // Vertical roads
+                { x: 400, y: 0, width: 120, height: 1800 },
+                { x: 900, y: 0, width: 120, height: 1800 },
+                { x: 1400, y: 0, width: 120, height: 1800 },
+                { x: 1900, y: 0, width: 120, height: 1800 },
+            ],
+            locations: [
+                {
+                    id: 'school',
+                    name: '🏫 School',
+                    x: 600,
+                    y: 100,
+                    width: 220,
+                    height: 180,
+                    color: '#FFE082',
+                    emoji: '📚',
+                    emojis: ['📚', '✏️', '📐', '🎒']
+                },
+                {
+                    id: 'work',
+                    name: '🏢 Work',
+                    x: 1100,
+                    y: 100,
+                    width: 220,
+                    height: 180,
+                    color: '#90CAF9',
+                    emoji: '💼',
+                    emojis: ['💼', '💻', '📊', '☕']
+                },
+                {
+                    id: 'home',
+                    name: '🏠 Home',
+                    x: 1600,
+                    y: 100,
+                    width: 220,
+                    height: 180,
+                    color: '#FFAB91',
+                    emoji: '🏠',
+                    emojis: ['🏠', '❤️', '🛋️', '🍕']
+                },
+                {
+                    id: 'library',
+                    name: '📚 Library',
+                    x: 2050,
+                    y: 450,
+                    width: 220,
+                    height: 180,
+                    color: '#CE93D8',
+                    emoji: '📖',
+                    emojis: ['📖', '📚', '🤓', '📝']
+                },
+                {
+                    id: 'park',
+                    name: '🌳 Park',
+                    x: 150,
+                    y: 950,
+                    width: 220,
+                    height: 180,
+                    color: '#A5D6A7',
+                    emoji: '🌳',
+                    emojis: ['🌳', '🌸', '🦋', '☀️']
+                },
+                {
+                    id: 'firestation',
+                    name: '🚒 Fire Station',
+                    x: 1100,
+                    y: 950,
+                    width: 220,
+                    height: 180,
+                    color: '#EF5350',
+                    emoji: '🚒',
+                    emojis: ['🚒', '👨‍🚒', '🔥', '💦']
+                },
+                {
+                    id: 'hospital',
+                    name: '🏥 Hospital',
+                    x: 1600,
+                    y: 950,
+                    width: 220,
+                    height: 180,
+                    color: '#FFCDD2',
+                    emoji: '🏥',
+                    emojis: ['🏥', '⚕️', '💊', '🩺']
+                },
+                {
+                    id: 'store',
+                    name: '🏪 Store',
+                    x: 600,
+                    y: 1450,
+                    width: 220,
+                    height: 180,
+                    color: '#80CBC4',
+                    emoji: '🏪',
+                    emojis: ['🏪', '🛒', '🍎', '💰']
+                }
+            ],
+            trees: []
+        };
+
+        // Generate random trees for decoration
+        for (let i = 0; i < 40; i++) {
+            const x = Math.random() * townMap.width;
+            const y = Math.random() * townMap.height;
+
+            // Don't place trees on roads
+            const onRoad = townMap.roads.some(road =>
+                x > road.x && x < road.x + road.width &&
+                y > road.y && y < road.y + road.height
+            );
+
+            if (!onRoad) {
+                townMap.trees.push({ x, y, size: 30 + Math.random() * 20 });
+            }
+        }
+
+        // Input handling
+        const input = {
+            keys: {},
+            touchActive: false,
+            touchDir: { x: 0, y: 0 }
+        };
+
+        // Touch controls
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', () => {
+            input.touchActive = false;
+            input.touchDir = { x: 0, y: 0 };
+        });
+
+        // Mouse controls (for desktop testing)
+        canvas.addEventListener('mousedown', handleTouch);
+        canvas.addEventListener('mousemove', handleTouch);
+        canvas.addEventListener('mouseup', () => {
+            input.touchActive = false;
+            input.touchDir = { x: 0, y: 0 };
+        });
+
+        function handleTouch(e) {
+            if (!game.isPlaying) return;
+
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = canvas.getBoundingClientRect();
+
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            // Calculate direction from car's screen position to touch point
+            const carScreenX = canvas.width / 2;
+            const carScreenY = canvas.height / 2;
+
+            const dx = touchX - carScreenX;
+            const dy = touchY - carScreenY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 30) {  // Dead zone
+                input.touchActive = true;
+                input.touchDir.x = dx / distance;
+                input.touchDir.y = dy / distance;
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            input.keys[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            input.keys[e.key] = false;
+        });
+
+        // Game Functions
+        function updateCar() {
+            // Determine movement direction
+            let moveX = 0;
+            let moveY = 0;
+
+            if (input.touchActive) {
+                moveX = input.touchDir.x;
+                moveY = input.touchDir.y;
+            } else {
+                if (input.keys['ArrowLeft'] || input.keys['a']) moveX -= 1;
+                if (input.keys['ArrowRight'] || input.keys['d']) moveX += 1;
+                if (input.keys['ArrowUp'] || input.keys['w']) moveY -= 1;
+                if (input.keys['ArrowDown'] || input.keys['s']) moveY += 1;
+            }
+
+            // Normalize diagonal movement
+            if (moveX !== 0 || moveY !== 0) {
+                const length = Math.sqrt(moveX * moveX + moveY * moveY);
+                moveX /= length;
+                moveY /= length;
+
+                // Update target angle
+                game.car.targetAngle = Math.atan2(moveY, moveX) + Math.PI / 2;
+
+                // Accelerate
+                game.car.vx += moveX * game.car.acceleration;
+                game.car.vy += moveY * game.car.acceleration;
+            }
+
+            // Apply friction
+            game.car.vx *= game.car.friction;
+            game.car.vy *= game.car.friction;
+
+            // Limit speed
+            const speed = Math.sqrt(game.car.vx * game.car.vx + game.car.vy * game.car.vy);
+            if (speed > game.car.maxSpeed) {
+                game.car.vx = (game.car.vx / speed) * game.car.maxSpeed;
+                game.car.vy = (game.car.vy / speed) * game.car.maxSpeed;
+            }
+
+            // Update position
+            game.car.x += game.car.vx;
+            game.car.y += game.car.vy;
+
+            // Smooth angle rotation
+            let angleDiff = game.car.targetAngle - game.car.angle;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            game.car.angle += angleDiff * 0.15;
+
+            // Keep car in bounds
+            game.car.x = Math.max(60, Math.min(townMap.width - 60, game.car.x));
+            game.car.y = Math.max(60, Math.min(townMap.height - 60, game.car.y));
+
+            // Update camera to follow car
+            game.camera.x = game.car.x - canvas.width / 2;
+            game.camera.y = game.car.y - canvas.height / 2;
+
+            // Keep camera in bounds
+            game.camera.x = Math.max(0, Math.min(townMap.width - canvas.width, game.camera.x));
+            game.camera.y = Math.max(0, Math.min(townMap.height - canvas.height, game.camera.y));
+        }
+
+        function checkLocationVisits() {
+            townMap.locations.forEach(location => {
+                if (game.visitedLocations.has(location.id)) return;
+
+                // Simple AABB collision
+                if (game.car.x > location.x &&
+                    game.car.x < location.x + location.width &&
+                    game.car.y > location.y &&
+                    game.car.y < location.y + location.height) {
+
+                    visitLocation(location);
+                }
+            });
+        }
+
+        function visitLocation(location) {
+            game.visitedLocations.add(location.id);
+
+            // Spawn emoji burst
+            spawnEmojiBurst(location.emojis);
+
+            // Update UI
+            updateProgress();
+
+            // Check win condition
+            if (game.visitedLocations.size >= game.totalLocations) {
+                setTimeout(() => winGame(), 500);
+            }
+        }
+
+        function spawnEmojiBurst(emojis) {
+            const numEmojis = 8;
+            for (let i = 0; i < numEmojis; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const angle = (Math.PI * 2 * i) / numEmojis;
+                const distance = 100;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                const emojiEl = document.createElement('div');
+                emojiEl.className = 'emoji-burst';
+                emojiEl.textContent = emoji;
+                emojiEl.style.setProperty('--tx', tx + 'px');
+                emojiEl.style.setProperty('--ty', ty + 'px');
+                emojiContainer.appendChild(emojiEl);
+
+                setTimeout(() => emojiEl.remove(), 1500);
+            }
+        }
+
+        function updateProgress() {
+            const visited = game.visitedLocations.size;
+            document.getElementById('locations-visited').textContent =
+                `Locations Visited: ${visited} / ${game.totalLocations}`;
+            document.getElementById('progress-fill').style.width =
+                `${(visited / game.totalLocations) * 100}%`;
+        }
+
+        // Drawing Functions
+        function drawBackground() {
+            // Sky/grass background
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawRoads() {
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+
+            // Draw roads with playmat style
+            ctx.fillStyle = '#555';
+            townMap.roads.forEach(road => {
+                ctx.fillRect(road.x, road.y, road.width, road.height);
+
+                // Road markings
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([20, 15]);
+
+                if (road.width > road.height) {
+                    // Horizontal road
+                    ctx.beginPath();
+                    ctx.moveTo(road.x, road.y + road.height / 2);
+                    ctx.lineTo(road.x + road.width, road.y + road.height / 2);
+                    ctx.stroke();
+                } else {
+                    // Vertical road
+                    ctx.beginPath();
+                    ctx.moveTo(road.x + road.width / 2, road.y);
+                    ctx.lineTo(road.x + road.width / 2, road.y + road.height);
+                    ctx.stroke();
+                }
+            });
+            ctx.setLineDash([]);
+
+            ctx.restore();
+        }
+
+        function drawTrees() {
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+
+            townMap.trees.forEach(tree => {
+                // Tree trunk
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(tree.x - 5, tree.y + 10, 10, 20);
+
+                // Tree foliage
+                ctx.fillStyle = '#228B22';
+                ctx.beginPath();
+                ctx.arc(tree.x, tree.y, tree.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Highlight
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.arc(tree.x - 8, tree.y - 8, tree.size / 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        function drawLocations() {
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+
+            townMap.locations.forEach(location => {
+                const visited = game.visitedLocations.has(location.id);
+
+                // Building
+                ctx.fillStyle = location.color;
+                ctx.fillRect(location.x, location.y, location.width, location.height);
+
+                // Border
+                ctx.strokeStyle = visited ? '#4CAF50' : '#333';
+                ctx.lineWidth = visited ? 6 : 3;
+                ctx.strokeRect(location.x, location.y, location.width, location.height);
+
+                // Checkmark if visited
+                if (visited) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = 'bold 40px Arial';
+                    ctx.fillText('✓', location.x + 15, location.y + 45);
+                }
+
+                // Emoji icon
+                ctx.font = '50px Arial';
+                ctx.fillText(location.emoji, location.x + location.width / 2 - 25, location.y + location.height / 2 + 15);
+
+                // Label
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(location.name, location.x + location.width / 2, location.y + location.height - 15);
+                ctx.textAlign = 'left';
+            });
+
+            ctx.restore();
+        }
+
+        function drawCar() {
+            ctx.save();
+
+            // Draw car at center of screen
+            const screenX = canvas.width / 2;
+            const screenY = canvas.height / 2;
+
+            ctx.translate(screenX, screenY);
+            ctx.rotate(game.car.angle);
+
+            // Car body
+            ctx.fillStyle = '#FF4444';
+            ctx.fillRect(-game.car.width / 2, -game.car.height / 2, game.car.width, game.car.height);
+
+            // Car outline
+            ctx.strokeStyle = '#CC0000';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-game.car.width / 2, -game.car.height / 2, game.car.width, game.car.height);
+
+            // Windshield
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(-12, -20, 24, 20);
+
+            // Headlights
+            ctx.fillStyle = '#FFFF00';
+            ctx.fillRect(-15, -30, 8, 5);
+            ctx.fillRect(7, -30, 8, 5);
+
+            // Wheels
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-20, -20, 6, 12);
+            ctx.fillRect(14, -20, 6, 12);
+            ctx.fillRect(-20, 8, 6, 12);
+            ctx.fillRect(14, 8, 6, 12);
+
+            ctx.restore();
+        }
+
+        function drawMiniMap() {
+            const miniMapSize = 150;
+            const miniMapScale = miniMapSize / Math.max(townMap.width, townMap.height);
+            const miniMapX = canvas.width - miniMapSize - 20;
+            const miniMapY = canvas.height - miniMapSize - 20;
+
+            // Background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(miniMapX, miniMapY, miniMapSize, miniMapSize);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(miniMapX, miniMapY, miniMapSize, miniMapSize);
+
+            ctx.save();
+            ctx.translate(miniMapX, miniMapY);
+            ctx.scale(miniMapScale, miniMapScale);
+
+            // Roads
+            ctx.fillStyle = '#888';
+            townMap.roads.forEach(road => {
+                ctx.fillRect(road.x, road.y, road.width, road.height);
+            });
+
+            // Locations
+            townMap.locations.forEach(location => {
+                ctx.fillStyle = game.visitedLocations.has(location.id) ? '#4CAF50' : location.color;
+                ctx.fillRect(location.x, location.y, location.width, location.height);
+            });
+
+            // Car
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(game.car.x, game.car.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackground();
+            drawRoads();
+            drawTrees();
+            drawLocations();
+            drawCar();
+            drawMiniMap();
+        }
+
+        function gameLoop() {
+            if (game.isPlaying) {
+                updateCar();
+                checkLocationVisits();
+            }
+
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            game.isPlaying = true;
+            game.startTime = Date.now();
+            game.visitedLocations.clear();
+
+            // Reset car position to a road
+            game.car.x = 460;
+            game.car.y = 360;
+            game.car.vx = 0;
+            game.car.vy = 0;
+            game.car.angle = 0;
+            game.car.targetAngle = 0;
+
+            updateProgress();
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.add('hidden');
+        }
+
+        function winGame() {
+            game.isPlaying = false;
+
+            const timeElapsed = Math.floor((Date.now() - game.startTime) / 1000);
+            const minutes = Math.floor(timeElapsed / 60);
+            const seconds = timeElapsed % 60;
+
+            document.getElementById('time-display').textContent =
+                `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            document.getElementById('win-screen').classList.remove('hidden');
+        }
+
+        // Event Listeners
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+</html>

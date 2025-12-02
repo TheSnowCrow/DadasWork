@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🚜 Excavator Treasure Hunt - Dig Deep!</title>
+    <meta name="description"
+        content="Dig through layers of dirt with your excavator to uncover buried treasure! 10 challenging levels plus endless dig mode.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #87CEEB 0%, #B0D4E8 30%, #D2B48C 100%);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated background clouds */
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 100px;
+            opacity: 0.7;
+            animation: drift linear infinite;
+            pointer-events: none;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: '';
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 100px;
+        }
+
+        @keyframes drift {
+            from {
+                left: -200px;
+            }
+
+            to {
+                left: 110%;
+            }
+        }
+
+        /* Dust particles */
+        .dust {
+            position: absolute;
+            background: rgba(210, 180, 140, 0.5);
+            border-radius: 50%;
+            animation: dustFloat linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes dustFloat {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.6;
+            }
+
+            90% {
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: translate(var(--dx), var(--dy)) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Menu screen */
+        #menu {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(139, 90, 43, 0.95), rgba(101, 67, 33, 0.95));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        #menu.hidden {
+            display: none;
+        }
+
+        .menu-title {
+            font-size: clamp(2rem, 8vw, 4rem);
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 1rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .menu-subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: #FFA500;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 2rem;
+            padding: 0 20px;
+        }
+
+        .level-btn,
+        .mode-btn {
+            padding: 15px 25px;
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: bold;
+            border: 3px solid #FFD700;
+            background: linear-gradient(135deg, #FF8C00, #FF6347);
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 99, 71, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .level-btn::before,
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .level-btn:active::before,
+        .mode-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .level-btn:hover,
+        .mode-btn:hover {
+            transform: scale(1.05);
+            border-color: #FFA500;
+            box-shadow: 0 6px 25px rgba(255, 165, 0, 0.6);
+        }
+
+        .mode-btn {
+            width: 100%;
+            max-width: 300px;
+            background: linear-gradient(135deg, #32CD32, #228B22);
+            border-color: #FFD700;
+            margin: 10px 0;
+        }
+
+        /* Game container */
+        #gameContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+        }
+
+        #gameContainer.active {
+            display: flex;
+        }
+
+        #gameCanvas {
+            background: linear-gradient(180deg, #87CEEB 0%, #B0D4E8 20%, #D2B48C 100%);
+            border: 4px solid #8B4513;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            max-height: 80vh;
+            touch-action: none;
+        }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-weight: bold;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        .hud-item {
+            background: rgba(139, 69, 19, 0.9);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            backdrop-filter: blur(5px);
+        }
+
+        .back-btn {
+            pointer-events: all;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(101, 67, 33, 0.95);
+            transform: scale(1.05);
+        }
+
+        /* Touch controls */
+        #touchControls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 50;
+        }
+
+        #touchControls.active {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .joystick-container {
+            width: 150px;
+            height: 150px;
+            position: relative;
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 140, 0, 0.3), rgba(255, 140, 0, 0.1));
+            border: 3px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #FFD700, #FFA500);
+            border: 3px solid #FF8C00;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.6);
+            transition: all 0.1s ease;
+        }
+
+        .dig-btn {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle at 30% 30%, #FF6347, #DC143C);
+            border: 4px solid #FFD700;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 20px rgba(220, 20, 60, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dig-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 3px 10px rgba(220, 20, 60, 0.7);
+        }
+
+        /* Victory screen */
+        #victoryScreen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        #victoryScreen.active {
+            display: flex;
+        }
+
+        .victory-content {
+            text-align: center;
+            animation: victoryPop 0.5s ease-out;
+        }
+
+        @keyframes victoryPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .victory-title {
+            font-size: clamp(2.5rem, 10vw, 5rem);
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            margin-bottom: 1rem;
+        }
+
+        .victory-emoji {
+            font-size: clamp(3rem, 12vw, 8rem);
+            margin: 20px 0;
+            animation: spin 1s ease-in-out;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg) scale(0);
+            }
+
+            50% {
+                transform: rotate(180deg) scale(1.2);
+            }
+
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        .emoji-rain {
+            position: absolute;
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            animation: fall linear forwards;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .victory-btn {
+            padding: 15px 40px;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-weight: bold;
+            border: 3px solid #FFD700;
+            background: linear-gradient(135deg, #FF8C00, #FF6347);
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .victory-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(255, 215, 0, 0.6);
+        }
+
+        /* Instruction text */
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #FFA500;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            text-align: center;
+            opacity: 0.9;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .level-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .instructions.desktop-only {
+                display: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .instructions.mobile-only {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Background elements -->
+    <div id="clouds"></div>
+    <div id="dust"></div>
+
+    <!-- Menu Screen -->
+    <div id="menu">
+        <h1 class="menu-title">🚜 Excavator Treasure Hunt 🚜</h1>
+        <p class="menu-subtitle">Dig deep and uncover the buried treasure!</p>
+
+        <div class="level-grid" id="levelGrid">
+            <!-- Levels will be generated here -->
+        </div>
+
+        <button class="mode-btn" onclick="startFreePlay()">
+            ⛏️ Endless Dig Mode
+        </button>
+
+        <p class="instructions desktop-only">Arrow Keys to move • Space to dig</p>
+        <p class="instructions mobile-only">Touch to move • Tap button to dig</p>
+    </div>
+
+    <!-- Game Container -->
+    <div id="gameContainer">
+        <div class="hud">
+            <div class="hud-item back-btn" onclick="returnToMenu()">« Menu</div>
+            <div class="hud-item" id="levelDisplay">Level 1</div>
+            <div class="hud-item" id="digCount">Digs: 0</div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="touchControls">
+            <div class="joystick-container">
+                <div class="joystick-base"></div>
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+            <button class="dig-btn" id="digButton">⛏️</button>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen">
+        <div class="victory-content">
+            <div class="victory-title">💎 Treasure Found! 💎</div>
+            <div class="victory-emoji">🏆</div>
+            <div id="victoryMessage" style="color: #FFD700; font-size: clamp(1rem, 4vw, 2rem); margin: 20px 0;">
+                Amazing Excavation!
+            </div>
+            <button class="victory-btn" onclick="nextLevel()">Next Level</button>
+            <button class="victory-btn" onclick="returnToMenu()">Main Menu</button>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration
+        const CELL_SIZE = 50;
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+
+        // Game state
+        let currentLevel = 0;
+        let isFreePlay = false;
+        let gameActive = false;
+        let digCount = 0;
+        let dustParticles = [];
+
+        // Canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Player state
+        let player = {
+            gridX: 0,
+            gridY: 0,
+            x: 0,
+            y: 0,
+            targetX: 0,
+            targetY: 0,
+            moving: false,
+            facing: 0, // 0=right, 1=down, 2=left, 3=up
+            digAnimProgress: 0
+        };
+
+        // Input state
+        let keys = {};
+        let touchActive = false;
+        let joystickAngle = 0;
+        let joystickPower = 0;
+        let lastMoveTime = 0;
+        let digPressed = false;
+
+        // Grid state
+        let grid = [];
+        let treasurePos = { x: 0, y: 0 };
+
+        // Level definitions - 10 challenging dig levels
+        const levels = [
+            // Level 1 - Simple introduction
+            {
+                name: "First Dig",
+                cols: 12,
+                rows: 10,
+                layout: [
+                    "############",
+                    "#E.........#",
+                    "#..........#",
+                    "#..DDDDDD..#",
+                    "#..D....D..#",
+                    "#..D.DD.D..#",
+                    "#..D.DT.D..#",
+                    "#..D....D..#",
+                    "#..DDDDDD..#",
+                    "############"
+                ]
+            },
+            // Level 2 - Layers
+            {
+                name: "Layered Earth",
+                cols: 14,
+                rows: 10,
+                layout: [
+                    "##############",
+                    "#E...........#",
+                    "#............#",
+                    "#DDDDDDDDDDDD#",
+                    "#DDDDDDDDDDDD#",
+                    "#DDDDDDDDDDDD#",
+                    "#DDDDDDDDDDDD#",
+                    "#DDDD.T.DDDDD#",
+                    "#DDDDDDDDDDDD#",
+                    "##############"
+                ]
+            },
+            // Level 3 - Spiral dig
+            {
+                name: "Spiral Pit",
+                cols: 15,
+                rows: 11,
+                layout: [
+                    "###############",
+                    "#E............#",
+                    "#.DDDDDDDDDDD.#",
+                    "#.D.........D.#",
+                    "#.D.DDDDDDD.D.#",
+                    "#.D.D.....D.D.#",
+                    "#.D.D.DDD.D.D.#",
+                    "#.D.D.DTD.D.D.#",
+                    "#.D.D.....D.D.#",
+                    "#.D.........D.#",
+                    "###############"
+                ]
+            },
+            // Level 4 - Columns
+            {
+                name: "Support Beams",
+                cols: 16,
+                rows: 11,
+                layout: [
+                    "################",
+                    "#E.............#",
+                    "#..............#",
+                    "#D.D.D.D.D.D.D.#",
+                    "#D.D.D.D.D.D.D.#",
+                    "#D.D.D.D.D.D.D.#",
+                    "#D.D.D.D.D.D.D.#",
+                    "#D.D.D.D.D.D.D.#",
+                    "#D.D.D.D.D.D.D.#",
+                    "#.......T......#",
+                    "################"
+                ]
+            },
+            // Level 5 - Maze dig
+            {
+                name: "Underground Maze",
+                cols: 17,
+                rows: 12,
+                layout: [
+                    "#################",
+                    "#E..............#",
+                    "#..............D#",
+                    "#DDDDDDDDDDD.D.D#",
+                    "#D...........D.D#",
+                    "#D.DDDDDDDDD.D.D#",
+                    "#D.D.........D.D#",
+                    "#D.D.DDDDDDD.D.D#",
+                    "#D.D.D.....D.D.D#",
+                    "#D.D.D.DDD.D...D#",
+                    "#D...D..TD.DDDDD#",
+                    "#################"
+                ]
+            },
+            // Level 6 - Deep shaft
+            {
+                name: "Deep Shaft",
+                cols: 13,
+                rows: 13,
+                layout: [
+                    "#############",
+                    "#E..........#",
+                    "#...........#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDD.DDDDD#",
+                    "#DDDDDDDDDDD#",
+                    "#DDDDTDDDDDD#",
+                    "#############"
+                ]
+            },
+            // Level 7 - Chambers
+            {
+                name: "Cave System",
+                cols: 18,
+                rows: 13,
+                layout: [
+                    "##################",
+                    "#E...............#",
+                    "#................#",
+                    "#DDD..DDD..DDD...#",
+                    "#D.D..D.D..D.D.DD#",
+                    "#D.D..D.D..D.D.DD#",
+                    "#D....D....D...DD#",
+                    "#DDDDDDDDDDDDDDDD#",
+                    "#D..............D#",
+                    "#D.DDDDDDDDDDDD.D#",
+                    "#D.D..........D.D#",
+                    "#D.D....T.....D.D#",
+                    "##################"
+                ]
+            },
+            // Level 8 - Cross pattern
+            {
+                name: "Ancient Cross",
+                cols: 17,
+                rows: 13,
+                layout: [
+                    "#################",
+                    "#E..............#",
+                    "#...............#",
+                    "#DDDDDD.DDDDDDDD#",
+                    "#DDDDDD.DDDDDDDD#",
+                    "#DDDDDD.DDDDDDDD#",
+                    "#.......D.......#",
+                    "#DDDDDDDDDDDDDDD#",
+                    "#.......D.......#",
+                    "#DDDDDD.DDDDDDDD#",
+                    "#DDDDDD.DDDDDDDD#",
+                    "#DDDDDDTDDDDDDDD#",
+                    "#################"
+                ]
+            },
+            // Level 9 - Complex dig
+            {
+                name: "Labyrinth Depths",
+                cols: 19,
+                rows: 14,
+                layout: [
+                    "###################",
+                    "#E................#",
+                    "#.................#",
+                    "#DDDDDDDDD.DDDDDDD#",
+                    "#D.......D.D.....D#",
+                    "#D.DDDDD.D.D.DDD.D#",
+                    "#D.D...D.D.D.D.D.D#",
+                    "#D.D.D.D.D.D.D.D.D#",
+                    "#D.D.D.D.D.D.D.D.D#",
+                    "#D.D.D...D...D.D.D#",
+                    "#D.D.DDDDDDDDD.D.D#",
+                    "#D...D.......D...D#",
+                    "#DDDDD...T...DDDDD#",
+                    "###################"
+                ]
+            },
+            // Level 10 - Epic finale
+            {
+                name: "Buried Ruins",
+                cols: 21,
+                rows: 15,
+                layout: [
+                    "#####################",
+                    "#E..................#",
+                    "#...................#",
+                    "#DDDDDDDDDDDDDDDDDDD#",
+                    "#D.................D#",
+                    "#D.DDDDDDDDDDDDDDD.D#",
+                    "#D.D.............D.D#",
+                    "#D.D.DDDDDDDDDDD.D.D#",
+                    "#D.D.D.........D.D.D#",
+                    "#D.D.D.DDDDDDD.D.D.D#",
+                    "#D.D.D.D.....D.D.D.D#",
+                    "#D.D.D.D.DDD.D.D.D.D#",
+                    "#D.D.D.D.DTD.D.D.D.D#",
+                    "#D.D.D.D.....D.D.D.D#",
+                    "#####################"
+                ]
+            }
+        ];
+
+        // Initialize
+        function init() {
+            createClouds();
+            setupCanvas();
+            generateLevelButtons();
+            setupEventListeners();
+            detectTouchDevice();
+            animateBackground();
+        }
+
+        // Create animated clouds
+        function createClouds() {
+            const cloudsContainer = document.getElementById('clouds');
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                const size = Math.random() * 60 + 40;
+                cloud.style.width = size + 'px';
+                cloud.style.height = size * 0.6 + 'px';
+                cloud.style.top = Math.random() * 30 + '%';
+                cloud.style.left = Math.random() * 100 + '%';
+                cloud.style.animationDuration = (Math.random() * 40 + 40) + 's';
+                cloud.style.animationDelay = Math.random() * 10 + 's';
+
+                const before = Math.random() * 40 + 30;
+                cloud.style.setProperty('--before-size', before + 'px');
+
+                cloudsContainer.appendChild(cloud);
+            }
+        }
+
+        // Animate background
+        function animateBackground() {
+            requestAnimationFrame(animateBackground);
+
+            // Update dust particles
+            dustParticles = dustParticles.filter(p => p.life > 0);
+            dustParticles.forEach(p => {
+                p.life--;
+            });
+        }
+
+        // Setup canvas
+        function setupCanvas() {
+            const maxWidth = window.innerWidth - 40;
+            const maxHeight = window.innerHeight * 0.7;
+
+            const scale = Math.min(maxWidth / CANVAS_WIDTH, maxHeight / CANVAS_HEIGHT);
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            canvas.style.width = (CANVAS_WIDTH * scale) + 'px';
+            canvas.style.height = (CANVAS_HEIGHT * scale) + 'px';
+        }
+
+        // Generate level buttons
+        function generateLevelButtons() {
+            const gridEl = document.getElementById('levelGrid');
+            for (let i = 0; i < levels.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.textContent = i + 1;
+                btn.onclick = () => startLevel(i);
+                gridEl.appendChild(btn);
+            }
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            // Keyboard
+            document.addEventListener('keydown', (e) => {
+                if (!gameActive) return;
+                keys[e.key] = true;
+
+                if (e.key === ' ' || e.key === 'Enter') {
+                    tryDig();
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+            });
+
+            // Touch joystick
+            const joystickContainer = document.querySelector('.joystick-container');
+            const joystickStick = document.getElementById('joystickStick');
+
+            function handleTouch(e) {
+                if (!gameActive) return;
+                const rect = joystickContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - centerX;
+                const deltaY = touch.clientY - centerY;
+
+                const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 45);
+                joystickAngle = Math.atan2(deltaY, deltaX);
+                joystickPower = distance / 45;
+
+                const stickX = Math.cos(joystickAngle) * distance;
+                const stickY = Math.sin(joystickAngle) * distance;
+
+                joystickStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
+                touchActive = true;
+                e.preventDefault();
+            }
+
+            function endTouch() {
+                touchActive = false;
+                joystickPower = 0;
+                joystickStick.style.transform = 'translate(-50%, -50%)';
+            }
+
+            joystickContainer.addEventListener('touchstart', handleTouch);
+            joystickContainer.addEventListener('touchmove', handleTouch);
+            joystickContainer.addEventListener('touchend', endTouch);
+
+            // Dig button
+            const digButton = document.getElementById('digButton');
+            digButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                tryDig();
+            });
+            digButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                tryDig();
+            });
+
+            // Window resize
+            window.addEventListener('resize', setupCanvas);
+        }
+
+        // Detect touch
+        function detectTouchDevice() {
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (isTouchDevice) {
+                document.getElementById('touchControls').classList.add('active');
+            }
+        }
+
+        // Start level
+        function startLevel(levelIndex) {
+            currentLevel = levelIndex;
+            isFreePlay = false;
+            document.getElementById('levelDisplay').textContent = levels[levelIndex].name;
+            startGame();
+        }
+
+        // Generate random level for free play
+        function generateRandomLevel() {
+            const cols = 17;
+            const rows = 13;
+            const layout = Array(rows).fill(null).map(() => Array(cols).fill('.'));
+
+            // Borders
+            for (let x = 0; x < cols; x++) {
+                layout[0][x] = '#';
+                layout[rows - 1][x] = '#';
+            }
+            for (let y = 0; y < rows; y++) {
+                layout[y][0] = '#';
+                layout[y][cols - 1] = '#';
+            }
+
+            // Random dirt
+            for (let y = 3; y < rows - 1; y++) {
+                for (let x = 1; x < cols - 1; x++) {
+                    if (Math.random() < 0.6) {
+                        layout[y][x] = 'D';
+                    }
+                }
+            }
+
+            // Player
+            layout[1][1] = 'E';
+
+            // Treasure
+            const tx = Math.floor(Math.random() * (cols - 4)) + 2;
+            const ty = Math.floor(Math.random() * (rows - 6)) + 4;
+            layout[ty][tx] = 'T';
+
+            return {
+                name: 'Random Dig',
+                cols: cols,
+                rows: rows,
+                layout: layout.map(row => row.join(''))
+            };
+        }
+
+        // Start free play
+        function startFreePlay() {
+            isFreePlay = true;
+            document.getElementById('levelDisplay').textContent = 'Endless Dig';
+            startGame();
+        }
+
+        // Start game
+        function startGame() {
+            digCount = 0;
+            document.getElementById('digCount').textContent = 'Digs: 0';
+
+            // Get level
+            let level;
+            if (isFreePlay) {
+                level = generateRandomLevel();
+            } else {
+                level = levels[currentLevel];
+            }
+
+            // Initialize grid
+            grid = [];
+            for (let y = 0; y < level.rows; y++) {
+                grid[y] = [];
+                for (let x = 0; x < level.cols; x++) {
+                    const cell = level.layout[y][x];
+                    grid[y][x] = {
+                        type: cell,
+                        dug: false
+                    };
+
+                    if (cell === 'E') {
+                        player.gridX = x;
+                        player.gridY = y;
+                        grid[y][x].type = '.';
+                    } else if (cell === 'T') {
+                        treasurePos = { x, y };
+                    }
+                }
+            }
+
+            player.x = player.gridX;
+            player.y = player.gridY;
+            player.targetX = player.gridX;
+            player.targetY = player.gridY;
+            player.moving = false;
+            player.facing = 0;
+            player.digAnimProgress = 0;
+
+            // Store level
+            window.currentLevelData = level;
+
+            // Calculate rendering
+            window.cellSize = Math.min(
+                CANVAS_WIDTH / level.cols,
+                CANVAS_HEIGHT / level.rows
+            );
+            window.offsetX = (CANVAS_WIDTH - window.cellSize * level.cols) / 2;
+            window.offsetY = (CANVAS_HEIGHT - window.cellSize * level.rows) / 2;
+
+            // Show game
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('gameContainer').classList.add('active');
+            gameActive = true;
+
+            // Start loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Game loop
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+
+            update(timestamp);
+            render();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Update
+        function update(timestamp) {
+            // Handle input for movement
+            if (!player.moving && timestamp - lastMoveTime > 150) {
+                let dx = 0, dy = 0;
+
+                // Keyboard
+                if (keys['ArrowRight'] || keys['d'] || keys['D']) dx = 1;
+                else if (keys['ArrowLeft'] || keys['a'] || keys['A']) dx = -1;
+                else if (keys['ArrowDown'] || keys['s'] || keys['S']) dy = 1;
+                else if (keys['ArrowUp'] || keys['w'] || keys['W']) dy = -1;
+
+                // Touch
+                if (touchActive && joystickPower > 0.3) {
+                    const angle = joystickAngle;
+                    if (Math.abs(Math.cos(angle)) > Math.abs(Math.sin(angle))) {
+                        dx = Math.cos(angle) > 0 ? 1 : -1;
+                    } else {
+                        dy = Math.sin(angle) > 0 ? 1 : -1;
+                    }
+                }
+
+                if (dx !== 0 || dy !== 0) {
+                    tryMove(dx, dy);
+                    lastMoveTime = timestamp;
+                }
+            }
+
+            // Animate movement
+            if (player.moving) {
+                const speed = 0.15;
+                const diffX = player.targetX - player.x;
+                const diffY = player.targetY - player.y;
+
+                player.x += diffX * speed;
+                player.y += diffY * speed;
+
+                if (Math.abs(diffX) < 0.01 && Math.abs(diffY) < 0.01) {
+                    player.x = player.targetX;
+                    player.y = player.targetY;
+                    player.gridX = player.targetX;
+                    player.gridY = player.targetY;
+                    player.moving = false;
+
+                    // Check treasure
+                    if (grid[player.gridY][player.gridX].type === 'T') {
+                        victory();
+                    }
+                }
+            }
+
+            // Animate dig
+            if (player.digAnimProgress > 0) {
+                player.digAnimProgress -= 0.05;
+            }
+        }
+
+        // Try move
+        function tryMove(dx, dy) {
+            const newX = player.gridX + dx;
+            const newY = player.gridY + dy;
+            const level = window.currentLevelData;
+
+            if (newX < 0 || newX >= level.cols || newY < 0 || newY >= level.rows) {
+                return;
+            }
+
+            const cell = grid[newY][newX];
+
+            // Update facing
+            if (dx > 0) player.facing = 0;
+            else if (dy > 0) player.facing = 1;
+            else if (dx < 0) player.facing = 2;
+            else if (dy < 0) player.facing = 3;
+
+            // Can only move to empty or treasure
+            if (cell.type === '.' || cell.type === 'T') {
+                player.targetX = newX;
+                player.targetY = newY;
+                player.moving = true;
+            }
+        }
+
+        // Try dig
+        function tryDig() {
+            if (player.moving || player.digAnimProgress > 0) return;
+
+            // Determine dig position based on facing
+            let digX = player.gridX;
+            let digY = player.gridY;
+
+            if (player.facing === 0) digX++;
+            else if (player.facing === 1) digY++;
+            else if (player.facing === 2) digX--;
+            else if (player.facing === 3) digY--;
+
+            const level = window.currentLevelData;
+            if (digX < 0 || digX >= level.cols || digY < 0 || digY >= level.rows) {
+                return;
+            }
+
+            const cell = grid[digY][digX];
+
+            if (cell.type === 'D') {
+                cell.type = '.';
+                player.digAnimProgress = 1;
+                digCount++;
+                document.getElementById('digCount').textContent = 'Digs: ' + digCount;
+
+                // Create dust effect
+                createDust(digX, digY);
+            }
+        }
+
+        // Create dust particles
+        function createDust(gridX, gridY) {
+            for (let i = 0; i < 10; i++) {
+                dustParticles.push({
+                    x: gridX + Math.random(),
+                    y: gridY + Math.random(),
+                    vx: (Math.random() - 0.5) * 0.1,
+                    vy: (Math.random() - 0.5) * 0.1 - 0.05,
+                    life: 30,
+                    maxLife: 30,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+
+        // Render
+        function render() {
+            const level = window.currentLevelData;
+
+            // Clear
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+            skyGradient.addColorStop(0, '#87CEEB');
+            skyGradient.addColorStop(0.3, '#B0D4E8');
+            skyGradient.addColorStop(1, '#D2B48C');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            // Draw grid
+            for (let y = 0; y < level.rows; y++) {
+                for (let x = 0; x < level.cols; x++) {
+                    const cell = grid[y][x];
+                    const screenX = window.offsetX + x * window.cellSize;
+                    const screenY = window.offsetY + y * window.cellSize;
+
+                    if (cell.type === '#') {
+                        // Rock wall
+                        const gradient = ctx.createLinearGradient(
+                            screenX, screenY,
+                            screenX + window.cellSize, screenY + window.cellSize
+                        );
+                        gradient.addColorStop(0, '#696969');
+                        gradient.addColorStop(1, '#505050');
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+
+                        ctx.strokeStyle = '#404040';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(screenX, screenY, window.cellSize, window.cellSize);
+                    } else if (cell.type === 'D') {
+                        // Dirt
+                        const dirtGradient = ctx.createLinearGradient(
+                            screenX, screenY,
+                            screenX + window.cellSize, screenY + window.cellSize
+                        );
+                        dirtGradient.addColorStop(0, '#8B4513');
+                        dirtGradient.addColorStop(1, '#654321');
+                        ctx.fillStyle = dirtGradient;
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+
+                        // Dirt texture
+                        ctx.fillStyle = 'rgba(101, 67, 33, 0.3)';
+                        for (let i = 0; i < 3; i++) {
+                            ctx.fillRect(
+                                screenX + Math.random() * window.cellSize,
+                                screenY + Math.random() * window.cellSize,
+                                window.cellSize * 0.2,
+                                window.cellSize * 0.2
+                            );
+                        }
+
+                        ctx.strokeStyle = '#5c3a1f';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(screenX, screenY, window.cellSize, window.cellSize);
+                    } else if (cell.type === 'T') {
+                        // Treasure
+                        ctx.fillStyle = '#F5DEB3';
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+
+                        // Treasure chest
+                        const tx = screenX + window.cellSize / 2;
+                        const ty = screenY + window.cellSize / 2;
+
+                        // Glow
+                        const glowGradient = ctx.createRadialGradient(tx, ty, 0, tx, ty, window.cellSize * 0.7);
+                        glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.4)');
+                        glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                        ctx.fillStyle = glowGradient;
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+
+                        ctx.save();
+                        ctx.translate(tx, ty);
+
+                        // Chest
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(-window.cellSize * 0.3, -window.cellSize * 0.2, window.cellSize * 0.6, window.cellSize * 0.4);
+
+                        ctx.fillStyle = '#FFD700';
+                        ctx.fillRect(-window.cellSize * 0.3, -window.cellSize * 0.22, window.cellSize * 0.6, window.cellSize * 0.1);
+                        ctx.fillRect(-window.cellSize * 0.08, -window.cellSize * 0.2, window.cellSize * 0.16, window.cellSize * 0.2);
+
+                        ctx.restore();
+                    } else {
+                        // Empty
+                        ctx.fillStyle = '#F5DEB3';
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+                    }
+                }
+            }
+
+            // Draw dust particles
+            dustParticles.forEach(p => {
+                const screenX = window.offsetX + (p.x + p.vx * (p.maxLife - p.life)) * window.cellSize;
+                const screenY = window.offsetY + (p.y + p.vy * (p.maxLife - p.life)) * window.cellSize;
+
+                ctx.fillStyle = `rgba(139, 69, 19, ${p.life / p.maxLife * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw excavator
+            const px = window.offsetX + (player.x + 0.5) * window.cellSize;
+            const py = window.offsetY + (player.y + 0.5) * window.cellSize;
+
+            ctx.save();
+            ctx.translate(px, py);
+
+            // Rotate based on facing
+            const angles = [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+            ctx.rotate(angles[player.facing]);
+
+            // Dig animation
+            if (player.digAnimProgress > 0) {
+                ctx.translate(player.digAnimProgress * 5, 0);
+            }
+
+            // Body
+            const bodyGradient = ctx.createLinearGradient(
+                -window.cellSize * 0.2, -window.cellSize * 0.15,
+                window.cellSize * 0.2, window.cellSize * 0.15
+            );
+            bodyGradient.addColorStop(0, '#FFD700');
+            bodyGradient.addColorStop(0.5, '#FFA500');
+            bodyGradient.addColorStop(1, '#FF8C00');
+
+            ctx.fillStyle = bodyGradient;
+            ctx.fillRect(-window.cellSize * 0.2, -window.cellSize * 0.15, window.cellSize * 0.4, window.cellSize * 0.3);
+
+            // Cabin
+            ctx.fillStyle = '#4169E1';
+            ctx.fillRect(-window.cellSize * 0.15, -window.cellSize * 0.25, window.cellSize * 0.2, window.cellSize * 0.15);
+
+            // Window
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(-window.cellSize * 0.12, -window.cellSize * 0.22, window.cellSize * 0.14, window.cellSize * 0.09);
+
+            // Arm
+            ctx.strokeStyle = '#FF8C00';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(window.cellSize * 0.2, 0);
+            const armX = window.cellSize * 0.35;
+            const armY = player.digAnimProgress > 0 ? -window.cellSize * 0.1 : window.cellSize * 0.1;
+            ctx.lineTo(armX, armY);
+            ctx.stroke();
+
+            // Bucket
+            ctx.fillStyle = '#696969';
+            ctx.beginPath();
+            ctx.moveTo(armX, armY);
+            ctx.lineTo(armX + window.cellSize * 0.1, armY + window.cellSize * 0.05);
+            ctx.lineTo(armX + window.cellSize * 0.1, armY + window.cellSize * 0.15);
+            ctx.lineTo(armX, armY + window.cellSize * 0.1);
+            ctx.closePath();
+            ctx.fill();
+
+            // Tracks
+            ctx.fillStyle = '#2F4F4F';
+            ctx.fillRect(-window.cellSize * 0.2, window.cellSize * 0.15, window.cellSize * 0.4, window.cellSize * 0.08);
+
+            ctx.restore();
+        }
+
+        // Victory
+        function victory() {
+            gameActive = false;
+
+            // Emoji rain
+            const emojis = ['💎', '💰', '🏆', '⚡', '✨', '🌟', '💎', '🎉', '🎊'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'emoji-rain';
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = Math.random() * 100 + '%';
+                    emoji.style.top = '-50px';
+                    emoji.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.getElementById('victoryScreen').appendChild(emoji);
+
+                    setTimeout(() => emoji.remove(), 4000);
+                }, i * 80);
+            }
+
+            // Message
+            if (isFreePlay) {
+                document.getElementById('victoryMessage').textContent =
+                    `Treasure Found in ${digCount} digs! Dig Another?`;
+            } else {
+                document.getElementById('victoryMessage').textContent =
+                    `Level ${currentLevel + 1} Complete! ${digCount} digs!`;
+            }
+
+            document.getElementById('victoryScreen').classList.add('active');
+        }
+
+        // Next level
+        function nextLevel() {
+            document.getElementById('victoryScreen').classList.remove('active');
+
+            if (isFreePlay) {
+                startFreePlay();
+            } else if (currentLevel < levels.length - 1) {
+                startLevel(currentLevel + 1);
+            } else {
+                document.getElementById('victoryMessage').innerHTML =
+                    '🎊 All Levels Complete! 🎊<br>Master Excavator!';
+                setTimeout(() => {
+                    returnToMenu();
+                }, 3000);
+            }
+        }
+
+        // Return to menu
+        function returnToMenu() {
+            gameActive = false;
+            document.getElementById('victoryScreen').classList.remove('active');
+            document.getElementById('gameContainer').classList.remove('active');
+            document.getElementById('menu').classList.remove('hidden');
+            keys = {};
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+
+</html>

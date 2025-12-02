@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🌊 Submarine Adventure - Deep Sea Treasure Hunt</title>
+    <meta name="description" content="Navigate your submarine through underwater mazes to find the treasure! 10 exciting levels plus endless free play mode.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #001a33 0%, #003d5c 50%, #004d73 100%);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Animated background bubbles */
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: rise linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rise {
+            to {
+                bottom: 110vh;
+                transform: translateX(var(--drift)) scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        /* Menu screen */
+        #menu {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 40, 80, 0.95), rgba(0, 60, 100, 0.95));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        #menu.hidden {
+            display: none;
+        }
+
+        .menu-title {
+            font-size: clamp(2rem, 8vw, 4rem);
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.5);
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .menu-subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: #87CEEB;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 15px;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 2rem;
+            padding: 0 20px;
+        }
+
+        .level-btn, .mode-btn {
+            padding: 15px 25px;
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: bold;
+            border: 3px solid #FFD700;
+            background: linear-gradient(135deg, #0077be, #005a8c);
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 119, 190, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .level-btn::before, .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .level-btn:active::before, .mode-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .level-btn:hover, .mode-btn:hover {
+            transform: scale(1.05);
+            border-color: #FFA500;
+            box-shadow: 0 6px 25px rgba(255, 165, 0, 0.6);
+        }
+
+        .mode-btn {
+            width: 100%;
+            max-width: 300px;
+            background: linear-gradient(135deg, #FF6B6B, #C44569);
+            border-color: #FFD700;
+            margin: 10px 0;
+        }
+
+        /* Game container */
+        #gameContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+        }
+
+        #gameContainer.active {
+            display: flex;
+        }
+
+        #gameCanvas {
+            background: linear-gradient(180deg, #004d73 0%, #003d5c 100%);
+            border: 4px solid #FFD700;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            max-height: 80vh;
+            touch-action: none;
+        }
+
+        /* HUD */
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-weight: bold;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        .hud-item {
+            background: rgba(0, 40, 80, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            backdrop-filter: blur(5px);
+        }
+
+        .back-btn {
+            pointer-events: all;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 60, 100, 0.9);
+            transform: scale(1.05);
+        }
+
+        /* Touch controls */
+        #touchControls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 50;
+        }
+
+        #touchControls.active {
+            display: block;
+        }
+
+        .joystick-container {
+            width: 150px;
+            height: 150px;
+            position: relative;
+        }
+
+        .joystick-base {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+            border: 3px solid rgba(255, 215, 0, 0.5);
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .joystick-stick {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle at 30% 30%, #FFD700, #FFA500);
+            border: 3px solid #FF8C00;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.6);
+            transition: all 0.1s ease;
+        }
+
+        /* Victory screen */
+        #victoryScreen {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        #victoryScreen.active {
+            display: flex;
+        }
+
+        .victory-content {
+            text-align: center;
+            animation: victoryPop 0.5s ease-out;
+        }
+
+        @keyframes victoryPop {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .victory-title {
+            font-size: clamp(2.5rem, 10vw, 5rem);
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            margin-bottom: 1rem;
+        }
+
+        .victory-emoji {
+            font-size: clamp(3rem, 12vw, 8rem);
+            margin: 20px 0;
+            animation: spin 1s ease-in-out;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg) scale(0); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .emoji-rain {
+            position: absolute;
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            animation: fall linear forwards;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .victory-btn {
+            padding: 15px 40px;
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            font-weight: bold;
+            border: 3px solid #FFD700;
+            background: linear-gradient(135deg, #0077be, #005a8c);
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .victory-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(255, 215, 0, 0.6);
+        }
+
+        /* Instruction text */
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #87CEEB;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .level-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .instructions.desktop-only {
+                display: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .instructions.mobile-only {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background bubbles -->
+    <div id="bubbles"></div>
+
+    <!-- Menu Screen -->
+    <div id="menu">
+        <h1 class="menu-title">🌊 Submarine Adventure 🌊</h1>
+        <p class="menu-subtitle">Navigate the depths and find the treasure!</p>
+        
+        <div class="level-grid" id="levelGrid">
+            <!-- Levels will be generated here -->
+        </div>
+        
+        <button class="mode-btn" onclick="startFreePlay()">
+            🎲 Free Play Mode
+        </button>
+        
+        <p class="instructions desktop-only">Use Arrow Keys to move your submarine</p>
+        <p class="instructions mobile-only">Touch screen to control your submarine</p>
+    </div>
+
+    <!-- Game Container -->
+    <div id="gameContainer">
+        <div class="hud">
+            <div class="hud-item back-btn" onclick="returnToMenu()">« Menu</div>
+            <div class="hud-item" id="levelDisplay">Level 1</div>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="touchControls">
+            <div class="joystick-container">
+                <div class="joystick-base"></div>
+                <div class="joystick-stick" id="joystickStick"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Screen -->
+    <div id="victoryScreen">
+        <div class="victory-content">
+            <div class="victory-title">🎉 Victory! 🎉</div>
+            <div class="victory-emoji">🏆</div>
+            <div id="victoryMessage" style="color: #87CEEB; font-size: clamp(1rem, 4vw, 2rem); margin: 20px 0;">
+                Treasure Found!
+            </div>
+            <button class="victory-btn" onclick="nextLevel()">Next Level</button>
+            <button class="victory-btn" onclick="returnToMenu()">Main Menu</button>
+        </div>
+    </div>
+
+    <script>
+        // Game configuration
+        const CELL_SIZE = 40;
+        const CANVAS_WIDTH = 800;
+        const CANVAS_HEIGHT = 600;
+        
+        // Game state
+        let currentLevel = 0;
+        let isFreePlay = false;
+        let gameActive = false;
+        
+        // Canvas and context
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Player state
+        let player = {
+            x: 1,
+            y: 1,
+            size: 0.8,
+            angle: 0,
+            velocityX: 0,
+            velocityY: 0
+        };
+        
+        // Input state
+        let keys = {};
+        let touchActive = false;
+        let joystickAngle = 0;
+        let joystickPower = 0;
+        
+        // Level definitions - 10 handcrafted levels
+        const levels = [
+            // Level 1 - Simple introduction
+            {
+                name: "First Dive",
+                cols: 15,
+                rows: 11,
+                maze: [
+                    "###############",
+                    "#P...........T#",
+                    "###############",
+                    "#.............#",
+                    "###############",
+                    "#.............#",
+                    "###############",
+                    "#.............#",
+                    "###############",
+                    "#.............#",
+                    "###############"
+                ]
+            },
+            // Level 2 - Simple maze
+            {
+                name: "The Shallows",
+                cols: 15,
+                rows: 11,
+                maze: [
+                    "###############",
+                    "#P..#.........#",
+                    "#.#.#.#######.#",
+                    "#.#...#.....#.#",
+                    "#.#####.###.#.#",
+                    "#.......#.#.#.#",
+                    "#########.#.#.#",
+                    "#.........#.#.#",
+                    "#.#########.#.#",
+                    "#...........#T#",
+                    "###############"
+                ]
+            },
+            // Level 3 - Spiral
+            {
+                name: "Spiral Current",
+                cols: 17,
+                rows: 13,
+                maze: [
+                    "#################",
+                    "#P..............#",
+                    "#.#############.#",
+                    "#.#...........#.#",
+                    "#.#.#########.#.#",
+                    "#.#.#.......#.#.#",
+                    "#.#.#.#####.#.#.#",
+                    "#.#.#...#T#.#.#.#",
+                    "#.#.#####.#.#.#.#",
+                    "#.#.......#.#.#.#",
+                    "#.#########.#.#.#",
+                    "#...........#...#",
+                    "#################"
+                ]
+            },
+            // Level 4 - Multiple paths
+            {
+                name: "Coral Crossroads",
+                cols: 19,
+                rows: 13,
+                maze: [
+                    "###################",
+                    "#P....#.......#...#",
+                    "#.###.#.#####.#.#.#",
+                    "#.#.#.#.#...#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#...#.#...#.#.#",
+                    "#.#.#####.#####.#.#",
+                    "#.#.............#T#",
+                    "###################"
+                ]
+            },
+            // Level 5 - Zigzag
+            {
+                name: "Serpent's Path",
+                cols: 19,
+                rows: 13,
+                maze: [
+                    "###################",
+                    "#P................#",
+                    "###############.#.#",
+                    "#.............#.#.#",
+                    "#.###########.#.#.#",
+                    "#.#...........#.#.#",
+                    "#.#.###########.#.#",
+                    "#.#.#...........#.#",
+                    "#.#.#.###########.#",
+                    "#.#.#.#...........#",
+                    "#.#.#.###########.#",
+                    "#.....#.........#T#",
+                    "###################"
+                ]
+            },
+            // Level 6 - Chambers
+            {
+                name: "Deep Chambers",
+                cols: 21,
+                rows: 15,
+                maze: [
+                    "#####################",
+                    "#P.#.....#.....#...T#",
+                    "#.#.#####.#####.###.#",
+                    "#.#.#...#.#...#.#...#",
+                    "#.#.#.#.#.#.#.#.#.###",
+                    "#.#.#.#.#.#.#.#.#...#",
+                    "#.#.#.#.#.#.#.#.###.#",
+                    "#.#.#.#...#.#.#...#.#",
+                    "#.#.#.#####.#.###.#.#",
+                    "#.#.#.......#.....#.#",
+                    "#.#.#########.#####.#",
+                    "#.#...........#.....#",
+                    "#.#############.###.#",
+                    "#...............#...#",
+                    "#####################"
+                ]
+            },
+            // Level 7 - Narrow passages
+            {
+                name: "Tight Channels",
+                cols: 21,
+                rows: 15,
+                maze: [
+                    "#####################",
+                    "#P#.................#",
+                    "#.#.###############.#",
+                    "#.#.#.............#.#",
+                    "#.#.#.###########.#.#",
+                    "#.#.#.#.........#.#.#",
+                    "#.#.#.#.#######.#.#.#",
+                    "#.#...#.#.....#.#.#.#",
+                    "#.#####.#.###.#.#.#.#",
+                    "#.......#...#.#.#.#.#",
+                    "#.#########.#.#.#.#.#",
+                    "#.#.........#...#.#.#",
+                    "#.#.###########.#.#.#",
+                    "#...#...........#.#T#",
+                    "#####################"
+                ]
+            },
+            // Level 8 - Complex maze
+            {
+                name: "Abyss Navigator",
+                cols: 23,
+                rows: 17,
+                maze: [
+                    "#######################",
+                    "#P..#.#...#...#.#.....#",
+                    "#.#.#.#.#.#.#.#.#.###.#",
+                    "#.#.#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#.#.#",
+                    "#.#...#.#...#.#...#.#.#",
+                    "#.#####.#####.#####.#.#",
+                    "#.....#.......#.....#.#",
+                    "#####.#########.#####.#",
+                    "#.....#.........#.....#",
+                    "#.#####.#######.#####.#",
+                    "#.#.....#.....#.....#.#",
+                    "#.#.#####.###.#####.#.#",
+                    "#.#.#.....#.#.....#.#.#",
+                    "#...#.....#.......#.#T#",
+                    "#######################"
+                ]
+            },
+            // Level 9 - Dead ends galore
+            {
+                name: "Trench of Trials",
+                cols: 23,
+                rows: 17,
+                maze: [
+                    "#######################",
+                    "#P....................#",
+                    "#.###################.#",
+                    "#.#.................#.#",
+                    "#.#.###############.#.#",
+                    "#.#.#.............#.#.#",
+                    "#.#.#.###########.#.#.#",
+                    "#.#.#.#.........#.#.#.#",
+                    "#.#.#.#.#######.#.#.#.#",
+                    "#.#.#.#.#.....#.#.#.#.#",
+                    "#.#.#.#.#.###.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#...#.#",
+                    "#.#.#.#.#.#.#.#.#####.#",
+                    "#.#...#...#.#.........#",
+                    "#.#########.#########T#",
+                    "#######################"
+                ]
+            },
+            // Level 10 - Epic finale
+            {
+                name: "The Final Depth",
+                cols: 25,
+                rows: 19,
+                maze: [
+                    "#########################",
+                    "#P......................#",
+                    "#.#####################.#",
+                    "#.#...................#.#",
+                    "#.#.#################.#.#",
+                    "#.#.#...............#.#.#",
+                    "#.#.#.#############.#.#.#",
+                    "#.#.#.#...........#.#.#.#",
+                    "#.#.#.#.#########.#.#.#.#",
+                    "#.#.#.#.#.......#.#.#.#.#",
+                    "#.#.#.#.#.#####.#.#.#.#.#",
+                    "#.#.#.#.#.#...#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#.#.#.#.#.#.#.#.#.#",
+                    "#.#.#.#...#.#...#.#...#.#",
+                    "#.#.#.#####.#####.#####.#",
+                    "#.#.#...............#.#.#",
+                    "#...#################.#T#",
+                    "#########################"
+                ]
+            }
+        ];
+        
+        // Initialize
+        function init() {
+            createBubbles();
+            setupCanvas();
+            generateLevelButtons();
+            setupEventListeners();
+            detectTouchDevice();
+        }
+        
+        // Create animated background bubbles
+        function createBubbles() {
+            const bubblesContainer = document.getElementById('bubbles');
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 60 + 20;
+                bubble.style.width = size + 'px';
+                bubble.style.height = size + 'px';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                bubble.style.animationDelay = Math.random() * 5 + 's';
+                bubble.style.setProperty('--drift', (Math.random() * 100 - 50) + 'px');
+                bubblesContainer.appendChild(bubble);
+            }
+        }
+        
+        // Setup canvas
+        function setupCanvas() {
+            const maxWidth = window.innerWidth - 40;
+            const maxHeight = window.innerHeight * 0.7;
+            
+            const scale = Math.min(maxWidth / CANVAS_WIDTH, maxHeight / CANVAS_HEIGHT);
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+            canvas.style.width = (CANVAS_WIDTH * scale) + 'px';
+            canvas.style.height = (CANVAS_HEIGHT * scale) + 'px';
+        }
+        
+        // Generate level selection buttons
+        function generateLevelButtons() {
+            const grid = document.getElementById('levelGrid');
+            for (let i = 0; i < levels.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.textContent = i + 1;
+                btn.onclick = () => startLevel(i);
+                grid.appendChild(btn);
+            }
+        }
+        
+        // Event listeners
+        function setupEventListeners() {
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (!gameActive) return;
+                keys[e.key] = true;
+                e.preventDefault();
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+            });
+            
+            // Touch controls
+            const joystickContainer = document.querySelector('.joystick-container');
+            const joystickStick = document.getElementById('joystickStick');
+            
+            function handleTouch(e) {
+                if (!gameActive) return;
+                const rect = joystickContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - centerX;
+                const deltaY = touch.clientY - centerY;
+                
+                const distance = Math.min(Math.sqrt(deltaX * deltaX + deltaY * deltaY), 45);
+                joystickAngle = Math.atan2(deltaY, deltaX);
+                joystickPower = distance / 45;
+                
+                const stickX = Math.cos(joystickAngle) * distance;
+                const stickY = Math.sin(joystickAngle) * distance;
+                
+                joystickStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
+                touchActive = true;
+                e.preventDefault();
+            }
+            
+            function endTouch() {
+                touchActive = false;
+                joystickPower = 0;
+                joystickStick.style.transform = 'translate(-50%, -50%)';
+            }
+            
+            joystickContainer.addEventListener('touchstart', handleTouch);
+            joystickContainer.addEventListener('touchmove', handleTouch);
+            joystickContainer.addEventListener('touchend', endTouch);
+            
+            // Window resize
+            window.addEventListener('resize', setupCanvas);
+        }
+        
+        // Detect touch device
+        function detectTouchDevice() {
+            const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (isTouchDevice) {
+                document.getElementById('touchControls').classList.add('active');
+            }
+        }
+        
+        // Start a specific level
+        function startLevel(levelIndex) {
+            currentLevel = levelIndex;
+            isFreePlay = false;
+            document.getElementById('levelDisplay').textContent = levels[levelIndex].name;
+            startGame();
+        }
+        
+        // Start free play mode
+        function startFreePlay() {
+            isFreePlay = true;
+            document.getElementById('levelDisplay').textContent = 'Free Play';
+            startGame();
+        }
+        
+        // Generate random maze for free play
+        function generateRandomMaze(cols, rows) {
+            // Create grid filled with walls
+            const maze = Array(rows).fill(null).map(() => Array(cols).fill('#'));
+            
+            // Recursive backtracking maze generation
+            function carve(x, y) {
+                maze[y][x] = '.';
+                
+                const directions = [
+                    [0, -2], [2, 0], [0, 2], [-2, 0]
+                ].sort(() => Math.random() - 0.5);
+                
+                for (const [dx, dy] of directions) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    
+                    if (nx > 0 && nx < cols - 1 && ny > 0 && ny < rows - 1 && maze[ny][nx] === '#') {
+                        maze[y + dy / 2][x + dx / 2] = '.';
+                        carve(nx, ny);
+                    }
+                }
+            }
+            
+            // Start carving from position (1, 1)
+            carve(1, 1);
+            
+            // Convert to string array
+            const mazeStr = maze.map(row => row.join(''));
+            
+            // Place player at start
+            mazeStr[1] = mazeStr[1].substring(0, 1) + 'P' + mazeStr[1].substring(2);
+            
+            // Place treasure at a random far location
+            let tx = cols - 2;
+            let ty = rows - 2;
+            mazeStr[ty] = mazeStr[ty].substring(0, tx) + 'T' + mazeStr[ty].substring(tx + 1);
+            
+            return {
+                name: 'Random Maze',
+                cols: cols,
+                rows: rows,
+                maze: mazeStr
+            };
+        }
+        
+        // Start the game
+        function startGame() {
+            // Get or generate level
+            let level;
+            if (isFreePlay) {
+                level = generateRandomMaze(21, 15);
+            } else {
+                level = levels[currentLevel];
+            }
+            
+            // Parse maze and find player/treasure positions
+            player.gridX = 0;
+            player.gridY = 0;
+            let treasureX = 0;
+            let treasureY = 0;
+            
+            for (let y = 0; y < level.rows; y++) {
+                for (let x = 0; x < level.cols; x++) {
+                    if (level.maze[y][x] === 'P') {
+                        player.gridX = x;
+                        player.gridY = y;
+                    } else if (level.maze[y][x] === 'T') {
+                        treasureX = x;
+                        treasureY = y;
+                    }
+                }
+            }
+            
+            // Center player in cell
+            player.x = player.gridX + 0.5;
+            player.y = player.gridY + 0.5;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            player.angle = 0;
+            
+            // Store level data
+            window.currentLevelData = level;
+            window.treasurePos = { x: treasureX + 0.5, y: treasureY + 0.5 };
+            
+            // Calculate cell size to fit canvas
+            window.cellSize = Math.min(
+                CANVAS_WIDTH / level.cols,
+                CANVAS_HEIGHT / level.rows
+            );
+            
+            // Calculate offset to center maze
+            window.offsetX = (CANVAS_WIDTH - window.cellSize * level.cols) / 2;
+            window.offsetY = (CANVAS_HEIGHT - window.cellSize * level.rows) / 2;
+            
+            // Show game, hide menu
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('gameContainer').classList.add('active');
+            gameActive = true;
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Game loop
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+            
+            update();
+            render();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Update game state
+        function update() {
+            const speed = 0.08;
+            const friction = 0.85;
+            
+            // Handle keyboard input
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                player.velocityY -= speed;
+            }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                player.velocityY += speed;
+            }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                player.velocityX -= speed;
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                player.velocityX += speed;
+            }
+            
+            // Handle touch input
+            if (touchActive && joystickPower > 0) {
+                player.velocityX += Math.cos(joystickAngle) * speed * joystickPower;
+                player.velocityY += Math.sin(joystickAngle) * speed * joystickPower;
+            }
+            
+            // Apply friction
+            player.velocityX *= friction;
+            player.velocityY *= friction;
+            
+            // Limit speed
+            const maxSpeed = 0.15;
+            const currentSpeed = Math.sqrt(player.velocityX ** 2 + player.velocityY ** 2);
+            if (currentSpeed > maxSpeed) {
+                player.velocityX = (player.velocityX / currentSpeed) * maxSpeed;
+                player.velocityY = (player.velocityY / currentSpeed) * maxSpeed;
+            }
+            
+            // Update angle based on movement
+            if (Math.abs(player.velocityX) > 0.01 || Math.abs(player.velocityY) > 0.01) {
+                player.angle = Math.atan2(player.velocityY, player.velocityX);
+            }
+            
+            // Try to move horizontally
+            let newX = player.x + player.velocityX;
+            if (!checkCollision(newX, player.y)) {
+                player.x = newX;
+            } else {
+                player.velocityX = 0;
+            }
+            
+            // Try to move vertically
+            let newY = player.y + player.velocityY;
+            if (!checkCollision(player.x, newY)) {
+                player.y = newY;
+            } else {
+                player.velocityY = 0;
+            }
+            
+            // Check if reached treasure
+            const dist = Math.sqrt(
+                (player.x - window.treasurePos.x) ** 2 +
+                (player.y - window.treasurePos.y) ** 2
+            );
+            
+            if (dist < 0.6) {
+                victory();
+            }
+        }
+        
+        // Check collision with walls
+        function checkCollision(x, y) {
+            const level = window.currentLevelData;
+            const checkRadius = player.size / 2;
+            
+            // Check multiple points around the player
+            const points = [
+                [x, y],
+                [x + checkRadius, y],
+                [x - checkRadius, y],
+                [x, y + checkRadius],
+                [x, y - checkRadius],
+                [x + checkRadius * 0.7, y + checkRadius * 0.7],
+                [x - checkRadius * 0.7, y + checkRadius * 0.7],
+                [x + checkRadius * 0.7, y - checkRadius * 0.7],
+                [x - checkRadius * 0.7, y - checkRadius * 0.7]
+            ];
+            
+            for (const [px, py] of points) {
+                const gridX = Math.floor(px);
+                const gridY = Math.floor(py);
+                
+                if (gridX < 0 || gridX >= level.cols || gridY < 0 || gridY >= level.rows) {
+                    return true;
+                }
+                
+                if (level.maze[gridY][gridX] === '#') {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Render game
+        function render() {
+            const level = window.currentLevelData;
+            
+            // Clear canvas
+            ctx.fillStyle = '#002b4d';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            // Draw maze
+            for (let y = 0; y < level.rows; y++) {
+                for (let x = 0; x < level.cols; x++) {
+                    const screenX = window.offsetX + x * window.cellSize;
+                    const screenY = window.offsetY + y * window.cellSize;
+                    
+                    if (level.maze[y][x] === '#') {
+                        // Wall
+                        const gradient = ctx.createLinearGradient(
+                            screenX, screenY,
+                            screenX + window.cellSize, screenY + window.cellSize
+                        );
+                        gradient.addColorStop(0, '#1a5c7a');
+                        gradient.addColorStop(1, '#0d3d5c');
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+                        
+                        // Border
+                        ctx.strokeStyle = '#0a2a3d';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(screenX, screenY, window.cellSize, window.cellSize);
+                    } else {
+                        // Path
+                        ctx.fillStyle = '#004d73';
+                        ctx.fillRect(screenX, screenY, window.cellSize, window.cellSize);
+                    }
+                }
+            }
+            
+            // Draw treasure
+            const tx = window.offsetX + window.treasurePos.x * window.cellSize;
+            const ty = window.offsetY + window.treasurePos.y * window.cellSize;
+            
+            // Treasure glow
+            const treasureGradient = ctx.createRadialGradient(tx, ty, 0, tx, ty, window.cellSize * 0.8);
+            treasureGradient.addColorStop(0, 'rgba(255, 215, 0, 0.3)');
+            treasureGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = treasureGradient;
+            ctx.fillRect(
+                tx - window.cellSize * 0.8,
+                ty - window.cellSize * 0.8,
+                window.cellSize * 1.6,
+                window.cellSize * 1.6
+            );
+            
+            // Treasure chest
+            ctx.save();
+            ctx.translate(tx, ty);
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(-window.cellSize * 0.25, -window.cellSize * 0.2, window.cellSize * 0.5, window.cellSize * 0.4);
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(-window.cellSize * 0.25, -window.cellSize * 0.22, window.cellSize * 0.5, window.cellSize * 0.08);
+            ctx.fillRect(-window.cellSize * 0.05, -window.cellSize * 0.2, window.cellSize * 0.1, window.cellSize * 0.15);
+            ctx.restore();
+            
+            // Draw player submarine
+            const px = window.offsetX + player.x * window.cellSize;
+            const py = window.offsetY + player.y * window.cellSize;
+            
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(player.angle);
+            
+            // Submarine body
+            const subGradient = ctx.createLinearGradient(
+                0, -window.cellSize * 0.2,
+                0, window.cellSize * 0.2
+            );
+            subGradient.addColorStop(0, '#FFD700');
+            subGradient.addColorStop(0.5, '#FFA500');
+            subGradient.addColorStop(1, '#FF8C00');
+            
+            ctx.fillStyle = subGradient;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, window.cellSize * 0.35, window.cellSize * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Submarine window
+            ctx.fillStyle = '#87CEEB';
+            ctx.beginPath();
+            ctx.arc(window.cellSize * 0.1, 0, window.cellSize * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Periscope
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, -window.cellSize * 0.1);
+            ctx.lineTo(0, -window.cellSize * 0.25);
+            ctx.stroke();
+            
+            // Propeller
+            ctx.strokeStyle = '#FF8C00';
+            ctx.lineWidth = 2;
+            const propAngle = (Date.now() / 50) % (Math.PI * 2);
+            for (let i = 0; i < 3; i++) {
+                const angle = propAngle + (i * Math.PI * 2 / 3);
+                ctx.beginPath();
+                ctx.moveTo(-window.cellSize * 0.35, 0);
+                ctx.lineTo(
+                    -window.cellSize * 0.35 - Math.cos(angle) * window.cellSize * 0.1,
+                    Math.sin(angle) * window.cellSize * 0.1
+                );
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+            
+            // Bubbles from submarine
+            if (Math.random() < 0.3) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                const bubbleSize = Math.random() * 4 + 2;
+                ctx.beginPath();
+                ctx.arc(
+                    px - Math.cos(player.angle) * window.cellSize * 0.3,
+                    py - Math.sin(player.angle) * window.cellSize * 0.3,
+                    bubbleSize,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+        
+        // Victory!
+        function victory() {
+            gameActive = false;
+            
+            // Create emoji rain
+            const emojis = ['🎉', '✨', '🏆', '⭐', '💎', '🌟', '🎊', '🥳'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'emoji-rain';
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = Math.random() * 100 + '%';
+                    emoji.style.top = '-50px';
+                    emoji.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    document.getElementById('victoryScreen').appendChild(emoji);
+                    
+                    setTimeout(() => emoji.remove(), 4000);
+                }, i * 100);
+            }
+            
+            // Update victory message
+            if (isFreePlay) {
+                document.getElementById('victoryMessage').textContent = 'Amazing Navigation! Try Another?';
+            } else {
+                document.getElementById('victoryMessage').textContent = 
+                    `Level ${currentLevel + 1} Complete!`;
+            }
+            
+            // Show victory screen
+            document.getElementById('victoryScreen').classList.add('active');
+        }
+        
+        // Next level
+        function nextLevel() {
+            document.getElementById('victoryScreen').classList.remove('active');
+            
+            if (isFreePlay) {
+                startFreePlay();
+            } else if (currentLevel < levels.length - 1) {
+                startLevel(currentLevel + 1);
+            } else {
+                // Completed all levels!
+                document.getElementById('victoryMessage').innerHTML = 
+                    '🎊 All Levels Complete! 🎊<br>You are a Master Navigator!';
+                setTimeout(() => {
+                    returnToMenu();
+                }, 3000);
+            }
+        }
+        
+        // Return to menu
+        function returnToMenu() {
+            gameActive = false;
+            document.getElementById('victoryScreen').classList.remove('active');
+            document.getElementById('gameContainer').classList.remove('active');
+            document.getElementById('menu').classList.remove('hidden');
+            keys = {};
+        }
+        
+        // Initialize game
+        init();
+    </script>
+</body>
+</html>

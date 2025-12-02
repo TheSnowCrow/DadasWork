@@ -326,19 +326,45 @@
     <canvas id="trace-canvas"></canvas>
     <div id="trace-hint">Trace the letter with your finger!</div>
 
+    <!-- Floating Game Menu -->
+    <div id="game-menu-container">
+        <button id="menu-toggle" class="action-btn" aria-label="Game Menu">
+            <span id="menu-icon">🎮</span>
+            <span id="menu-text">Games</span>
+        </button>
+        <div id="game-menu-dropdown" class="hidden">
+            <a href="index.html" class="menu-item">
+                <span class="menu-emoji">⌨️</span>
+                <span class="menu-label">Magic Typing</span>
+            </a>
+            <a href="drive.html" class="menu-item">
+                <span class="menu-emoji">🚗</span>
+                <span class="menu-label">Drive Game</span>
+            </a>
+            <a href="racer.html" class="menu-item">
+                <span class="menu-emoji">🏁</span>
+                <span class="menu-label">Racer</span>
+            </a>
+            <a href="town-racer.html" class="menu-item">
+                <span class="menu-emoji">🌆</span>
+                <span class="menu-label">Town Racer</span>
+            </a>
+            <a href="submarine.html" class="menu-item">
+                <span class="menu-emoji">🌊</span>
+                <span class="menu-label">Submarine</span>
+            </a>
+            <a href="excavator.html" class="menu-item">
+                <span class="menu-emoji">🚜</span>
+                <span class="menu-label">Excavator</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Other Controls (Desktop only) -->
     <div class="controls-bottom-right">
-        <!-- These buttons visibility is controlled by JS -->
         <button id="reset-btn" class="action-btn" style="display: none;">Reset</button>
         <button id="free-text-toggle" class="action-btn" style="display: none;">Free Type</button>
         <button id="keyboard-toggle" class="action-btn" style="display: none;">Keyboard</button>
-        <a href="drive.html" class="action-btn" style="text-decoration: none; background: rgba(255, 165, 0, 0.3);">🚗
-            Drive Game</a>
-        <a href="submarine.html" class="action-btn"
-            style="text-decoration: none; background: rgba(0, 119, 190, 0.3);">🌊
-            Submarine</a>
-        <a href="excavator.html" class="action-btn"
-            style="text-decoration: none; background: rgba(139, 69, 19, 0.3);">🚜
-            Excavator</a>
     </div>
 
     <div id="text-display">

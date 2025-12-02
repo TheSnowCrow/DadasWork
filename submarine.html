@@ -388,6 +388,89 @@
     <!-- Background bubbles -->
     <div id="bubbles"></div>
 
+    <!-- Floating Game Menu -->
+    <div style="position: fixed; bottom: 10px; left: 10px; z-index: 100;">
+        <button id="game-menu-toggle"
+            style="background: rgba(100, 100, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 10px 14px; color: white; font-size: 12px; cursor: pointer; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);">
+            <span style="font-size: 18px;">🎮</span>
+            <span>Games</span>
+        </button>
+        <div id="game-menu-list"
+            style="position: absolute; bottom: 100%; left: 0; margin-bottom: 10px; background: rgba(30, 30, 40, 0.95); border-radius: 15px; padding: 8px; min-width: 180px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); opacity: 0; transform: scale(0.8) translateY(10px); pointer-events: none; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);">
+            <a href="index.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
+                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                onmouseout="this.style.background='transparent'">
+                <span style="font-size: 20px; width: 24px; text-align: center;">⌨️</span>
+                <span style="flex: 1; font-weight: 500;">Magic Typing</span>
+            </a>
+            <a href="drive.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
+                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                onmouseout="this.style.background='transparent'">
+                <span style="font-size: 20px; width: 24px; text-align: center;">🚗</span>
+                <span style="flex: 1; font-weight: 500;">Drive Game</span>
+            </a>
+            <a href="racer.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
+                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                onmouseout="this.style.background='transparent'">
+                <span style="font-size: 20px; width: 24px; text-align: center;">🏁</span>
+                <span style="flex: 1; font-weight: 500;">Racer</span>
+            </a>
+            <a href="town-racer.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
+                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                onmouseout="this.style.background='transparent'">
+                <span style="font-size: 20px; width: 24px; text-align: center;">🌆</span>
+                <span style="flex: 1; font-weight: 500;">Town Racer</span>
+            </a>
+            <a href="submarine.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: rgba(255,255,255,0.6); border-radius: 10px; font-size: 13px; margin: 2px 0; pointer-events: none;">
+                <span style="font-size: 20px; width: 24px; text-align: center;">🌊</span>
+                <span style="flex: 1; font-weight: 500;">Submarine ✓</span>
+            </a>
+            <a href="excavator.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
+                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+                onmouseout="this.style.background='transparent'">
+                <span style="font-size: 20px; width: 24px; text-align: center;">🚜</span>
+                <span style="flex: 1; font-weight: 500;">Excavator</span>
+            </a>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const toggle = document.getElementById('game-menu-toggle');
+            const menu = document.getElementById('game-menu-list');
+            let isOpen = false;
+            toggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                isOpen = !isOpen;
+                if (isOpen) {
+                    menu.style.opacity = '1';
+                    menu.style.transform = 'scale(1) translateY(0)';
+                    menu.style.pointerEvents = 'auto';
+                    toggle.style.background = 'rgba(100, 100, 255, 0.6)';
+                } else {
+                    menu.style.opacity = '0';
+                    menu.style.transform = 'scale(0.8) translateY(10px)';
+                    menu.style.pointerEvents = 'none';
+                    toggle.style.background = 'rgba(100, 100, 255, 0.4)';
+                }
+            });
+            document.addEventListener('click', function () {
+                if (isOpen) {
+                    isOpen = false;
+                    menu.style.opacity = '0';
+                    menu.style.transform = 'scale(0.8) translateY(10px)';
+                    menu.style.pointerEvents = 'none';
+                    toggle.style.background = 'rgba(100, 100, 255, 0.4)';
+                }
+            });
+        })();
+    </script>
+
     <!-- Menu Screen -->
     <div id="menu">
         <h1 class="menu-title">🌊 Submarine Adventure 🌊</h1>
@@ -400,11 +483,6 @@
         <button class="mode-btn" onclick="startFreePlay()">
             🎲 Free Play Mode
         </button>
-
-        <a href="index.html" class="mode-btn"
-            style="text-decoration: none; margin-top: 20px; background: linear-gradient(135deg, #6B5B95, #4A4563);">
-            ← Back to Main Menu
-        </a>
 
         <p class="instructions desktop-only">Use Arrow Keys to move your submarine</p>
         <p class="instructions mobile-only">Touch screen to control your submarine</p>

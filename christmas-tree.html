@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Decorate the Christmas Tree</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+            background: linear-gradient(180deg, #0a1628 0%, #1a2a48 100%);
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #tree-area {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #tree-container {
+            position: relative;
+            width: 90%;
+            max-width: 500px;
+            height: 80%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tree-section {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .tree-layer {
+            width: 0;
+            height: 0;
+            border-left: 150px solid transparent;
+            border-right: 150px solid transparent;
+            border-bottom: 180px solid #0F5F0F;
+            position: relative;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .tree-layer.top {
+            border-left-width: 80px;
+            border-right-width: 80px;
+            border-bottom-width: 120px;
+        }
+
+        .tree-layer.middle {
+            border-left-width: 130px;
+            border-right-width: 130px;
+            border-bottom-width: 150px;
+            margin-top: -30px;
+        }
+
+        .tree-layer.bottom {
+            border-left-width: 180px;
+            border-right-width: 180px;
+            border-bottom-width: 200px;
+            margin-top: -30px;
+        }
+
+        #tree-trunk {
+            width: 60px;
+            height: 80px;
+            background: #654321;
+            margin-top: -10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .decoration {
+            position: absolute;
+            font-size: 32px;
+            cursor: grab;
+            z-index: 10;
+            pointer-events: none;
+            animation: decorationPop 0.3s ease;
+        }
+
+        @keyframes decorationPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .decoration.light {
+            animation: twinkle 1.5s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.6; filter: brightness(1); }
+            100% { opacity: 1; filter: brightness(1.5); }
+        }
+
+        .decoration.ornament {
+            animation: swing 3s ease-in-out infinite;
+        }
+
+        @keyframes swing {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        #star-topper {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px;
+            animation: starGlow 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px #FFD700);
+            z-index: 100;
+        }
+
+        @keyframes starGlow {
+            0%, 100% { filter: drop-shadow(0 0 10px #FFD700); }
+            50% { filter: drop-shadow(0 0 25px #FFD700) drop-shadow(0 0 35px #FFA500); }
+        }
+
+        #decoration-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(139, 0, 0, 0.95);
+            border-top: 4px solid #FFD700;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        #decoration-options {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 5px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .decoration-btn {
+            min-width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #228B22, #006400);
+            border: 3px solid #FFD700;
+            border-radius: 15px;
+            font-size: 36px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .decoration-btn:active {
+            transform: scale(0.95);
+        }
+
+        .decoration-btn.selected {
+            border-color: #FF0000;
+            border-width: 4px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+
+        #action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            flex: 1;
+            max-width: 200px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid #FFD700;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn.clear {
+            background: linear-gradient(135deg, #FF4444, #CC0000);
+        }
+
+        #instruction {
+            text-align: center;
+            color: #FFD700;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            padding: 5px;
+        }
+
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 20px;
+            opacity: 0.8;
+            animation: snowfall linear infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(-20px) translateX(0);
+            }
+            100% {
+                transform: translateY(100vh) translateX(var(--drift));
+            }
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 22, 40, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        .screen.hidden {
+            display: none;
+        }
+
+        .screen h1 {
+            color: #FFD700;
+            font-size: 48px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.5);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .screen p {
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin: 10px 20px;
+            line-height: 1.6;
+        }
+
+        button.start-btn {
+            background: linear-gradient(135deg, #228B22 0%, #006400 100%);
+            border: 4px solid #FFD700;
+            color: white;
+            font-size: 28px;
+            padding: 18px 48px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+
+        button.start-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        #celebration-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1500;
+        }
+
+        .celebration-emoji {
+            position: absolute;
+            font-size: 48px;
+            animation: celebrate 2s ease-out forwards;
+        }
+
+        @keyframes celebrate {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) rotate(0deg) scale(0.5);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) rotate(360deg) scale(1.5);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .screen h1 {
+                font-size: 36px;
+            }
+            button.start-btn {
+                font-size: 24px;
+                padding: 15px 36px;
+            }
+            .decoration-btn {
+                min-width: 60px;
+                height: 60px;
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="tree-area">
+            <div id="tree-container">
+                <div class="tree-section">
+                    <div class="tree-layer top" data-layer="top"></div>
+                </div>
+                <div class="tree-section">
+                    <div class="tree-layer middle" data-layer="middle"></div>
+                </div>
+                <div class="tree-section">
+                    <div class="tree-layer bottom" data-layer="bottom"></div>
+                </div>
+                <div id="tree-trunk"></div>
+            </div>
+        </div>
+
+        <div id="decoration-panel">
+            <div id="instruction">Select a decoration, then tap on the tree! 🎄</div>
+            <div id="decoration-options">
+                <button class="decoration-btn" data-decoration="🔴" title="Red Ornament">🔴</button>
+                <button class="decoration-btn" data-decoration="🟡" title="Gold Ornament">🟡</button>
+                <button class="decoration-btn" data-decoration="🔵" title="Blue Ornament">🔵</button>
+                <button class="decoration-btn" data-decoration="💡" title="Light Bulb">💡</button>
+                <button class="decoration-btn" data-decoration="✨" title="Sparkles">✨</button>
+                <button class="decoration-btn" data-decoration="⭐" title="Star">⭐</button>
+                <button class="decoration-btn" data-decoration="🎀" title="Bow">🎀</button>
+                <button class="decoration-btn" data-decoration="🎁" title="Present">🎁</button>
+                <button class="decoration-btn" data-decoration="🍬" title="Candy Cane">🍬</button>
+                <button class="decoration-btn" data-decoration="🔔" title="Bell">🔔</button>
+                <button class="decoration-btn" data-decoration="❄️" title="Snowflake">❄️</button>
+                <button class="decoration-btn" data-decoration="🎅" title="Santa">🎅</button>
+            </div>
+            <div id="action-buttons">
+                <button class="action-btn clear" id="clear-btn">🗑️ Clear All</button>
+                <button class="action-btn" id="done-btn">✨ I'm Done!</button>
+            </div>
+        </div>
+
+        <div id="celebration-overlay"></div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>🎄 Decorate the Christmas Tree 🎄</h1>
+            <p style="font-size: 24px;">🎨 Let's make it beautiful! 🎨</p>
+            <p>Choose decorations and tap on the tree to place them!</p>
+            <p>Add lights 💡, ornaments 🔴, stars ⭐, and more!</p>
+            <button class="start-btn" id="start-btn">START DECORATING</button>
+            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap decorations at the bottom, then tap the tree to place them</p>
+            <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
+                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
+                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
+                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
+                <a href="santa-delivery.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎅 Santa Delivery</a>
+            </div>
+        </div>
+
+        <!-- Complete Screen -->
+        <div id="complete-screen" class="screen hidden">
+            <h1>🎉 Beautiful Tree! 🎉</h1>
+            <p style="font-size: 28px; color: #FFD700;">Your Christmas tree looks amazing!</p>
+            <p style="font-size: 48px; margin: 20px;">🎄✨🎁⭐</p>
+            <p id="decoration-count"></p>
+            <button class="start-btn" id="restart-btn">DECORATE AGAIN</button>
+            <button class="start-btn" id="continue-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">KEEP DECORATING</button>
+            <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
+                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
+                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
+                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
+                <a href="santa-delivery.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎅 Santa Delivery</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CHRISTMAS TREE DECORATOR
+        // ============================================
+
+        const game = {
+            isPlaying: false,
+            selectedDecoration: null,
+            decorationCount: 0,
+            hasStarTopper: false
+        };
+
+        // Create snowfall
+        function createSnowfall() {
+            const treeArea = document.getElementById('tree-area');
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const snowflake = document.createElement('div');
+                    snowflake.className = 'snowflake';
+                    snowflake.textContent = '❄';
+                    snowflake.style.left = Math.random() * 100 + '%';
+                    snowflake.style.fontSize = (10 + Math.random() * 20) + 'px';
+                    snowflake.style.animationDuration = (5 + Math.random() * 10) + 's';
+                    snowflake.style.animationDelay = Math.random() * 5 + 's';
+                    snowflake.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+                    treeArea.appendChild(snowflake);
+                }, i * 100);
+            }
+        }
+
+        // Decoration selection
+        const decorationBtns = document.querySelectorAll('.decoration-btn');
+        decorationBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (!game.isPlaying) return;
+
+                decorationBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                game.selectedDecoration = btn.dataset.decoration;
+
+                // Update instruction
+                const decorationNames = {
+                    '🔴': 'Red Ornament',
+                    '🟡': 'Gold Ornament',
+                    '🔵': 'Blue Ornament',
+                    '💡': 'Light Bulb',
+                    '✨': 'Sparkles',
+                    '⭐': 'Star',
+                    '🎀': 'Bow',
+                    '🎁': 'Present',
+                    '🍬': 'Candy Cane',
+                    '🔔': 'Bell',
+                    '❄️': 'Snowflake',
+                    '🎅': 'Santa'
+                };
+                document.getElementById('instruction').textContent =
+                    `Selected: ${decorationNames[game.selectedDecoration]} - Tap the tree to place it! 🎄`;
+            });
+        });
+
+        // Tree click handler
+        const treeLayers = document.querySelectorAll('.tree-layer, #tree-trunk');
+        const treeContainer = document.getElementById('tree-container');
+
+        treeLayers.forEach(layer => {
+            layer.addEventListener('click', (e) => {
+                if (!game.isPlaying || !game.selectedDecoration) return;
+
+                placeDecoration(e);
+            });
+        });
+
+        function placeDecoration(e) {
+            const rect = treeContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const decoration = document.createElement('div');
+            decoration.className = 'decoration';
+            decoration.textContent = game.selectedDecoration;
+            decoration.style.left = x + 'px';
+            decoration.style.top = y + 'px';
+            decoration.style.transform = 'translate(-50%, -50%)';
+
+            // Add special classes for animations
+            if (game.selectedDecoration === '💡' || game.selectedDecoration === '✨') {
+                decoration.classList.add('light');
+            } else if (['🔴', '🟡', '🔵', '🎀', '🔔'].includes(game.selectedDecoration)) {
+                decoration.classList.add('ornament');
+            }
+
+            // Add click to remove
+            decoration.addEventListener('click', (e) => {
+                e.stopPropagation();
+                decoration.style.animation = 'decorationPop 0.3s ease reverse';
+                setTimeout(() => {
+                    decoration.remove();
+                    game.decorationCount--;
+                }, 300);
+            });
+
+            treeContainer.appendChild(decoration);
+            game.decorationCount++;
+
+            // Add mini celebration
+            createMiniCelebration(x, y);
+        }
+
+        function createMiniCelebration(x, y) {
+            const overlay = document.getElementById('celebration-overlay');
+            const emojis = ['✨', '⭐', '🎉'];
+
+            for (let i = 0; i < 3; i++) {
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                const celebEmoji = document.createElement('div');
+                celebEmoji.className = 'celebration-emoji';
+                celebEmoji.textContent = emoji;
+                celebEmoji.style.left = x + 'px';
+                celebEmoji.style.top = y + 'px';
+
+                const angle = (Math.PI * 2 * i) / 3;
+                const distance = 50;
+                celebEmoji.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                celebEmoji.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+
+                overlay.appendChild(celebEmoji);
+                setTimeout(() => celebEmoji.remove(), 2000);
+            }
+        }
+
+        // Clear all decorations
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (!game.isPlaying) return;
+
+            const decorations = treeContainer.querySelectorAll('.decoration');
+            decorations.forEach(dec => {
+                dec.style.animation = 'decorationPop 0.3s ease reverse';
+                setTimeout(() => dec.remove(), 300);
+            });
+
+            const star = document.getElementById('star-topper');
+            if (star) star.remove();
+
+            game.decorationCount = 0;
+            game.hasStarTopper = false;
+        });
+
+        // Done button
+        document.getElementById('done-btn').addEventListener('click', () => {
+            if (!game.isPlaying) return;
+
+            // Add star topper if not already there
+            if (!game.hasStarTopper) {
+                const star = document.createElement('div');
+                star.id = 'star-topper';
+                star.textContent = '⭐';
+                treeContainer.querySelector('.tree-section').appendChild(star);
+                game.hasStarTopper = true;
+            }
+
+            showCompleteScreen();
+        });
+
+        function showCompleteScreen() {
+            document.getElementById('decoration-count').textContent =
+                `You added ${game.decorationCount} decorations to your tree!`;
+            document.getElementById('complete-screen').classList.remove('hidden');
+
+            // Big celebration
+            const overlay = document.getElementById('celebration-overlay');
+            const celebEmojis = ['🎄', '✨', '🎁', '⭐', '🎉', '❄️', '🔔'];
+
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const emoji = celebEmojis[Math.floor(Math.random() * celebEmojis.length)];
+                    const celebEmoji = document.createElement('div');
+                    celebEmoji.className = 'celebration-emoji';
+                    celebEmoji.textContent = emoji;
+                    celebEmoji.style.left = Math.random() * 100 + '%';
+                    celebEmoji.style.top = Math.random() * 50 + '%';
+
+                    const tx = (Math.random() - 0.5) * 200;
+                    const ty = Math.random() * 200;
+                    celebEmoji.style.setProperty('--tx', tx + 'px');
+                    celebEmoji.style.setProperty('--ty', ty + 'px');
+
+                    overlay.appendChild(celebEmoji);
+                    setTimeout(() => celebEmoji.remove(), 2000);
+                }, i * 100);
+            }
+        }
+
+        // Start game
+        document.getElementById('start-btn').addEventListener('click', () => {
+            game.isPlaying = true;
+            document.getElementById('start-screen').classList.add('hidden');
+            createSnowfall();
+        });
+
+        // Restart
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            // Clear all decorations
+            const decorations = treeContainer.querySelectorAll('.decoration');
+            decorations.forEach(dec => dec.remove());
+            const star = document.getElementById('star-topper');
+            if (star) star.remove();
+
+            game.decorationCount = 0;
+            game.hasStarTopper = false;
+            game.selectedDecoration = null;
+
+            decorationBtns.forEach(b => b.classList.remove('selected'));
+            document.getElementById('instruction').textContent =
+                'Select a decoration, then tap on the tree! 🎄';
+
+            document.getElementById('complete-screen').classList.add('hidden');
+        });
+
+        // Continue decorating
+        document.getElementById('continue-btn').addEventListener('click', () => {
+            document.getElementById('complete-screen').classList.add('hidden');
+        });
+
+        // Initialize
+        createSnowfall();
+    </script>
+</body>
+</html>

@@ -28,7 +28,7 @@ Open `index.html` to play the typing game.
 ### Drive & Collect (New!)
 Open `drive.html` to play the touch-based driving game for little ones.
 
-Or visit the [live demo](#) if you have it hosted.
+Or visit [https://thesnowcrow.github.io/DadasWork/]
 
 ## 🌈 Visualization Modes
 

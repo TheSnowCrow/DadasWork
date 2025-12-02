@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Santa's Present Delivery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
+            background: #0a1628;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: linear-gradient(180deg, #0a1628 0%, #1a2a48 100%);
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #score-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(139, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+            border: 3px solid #FFD700;
+            pointer-events: auto;
+        }
+
+        #houses-delivered {
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        #progress-bar {
+            width: 100%;
+            height: 14px;
+            background: #4a0000;
+            border-radius: 7px;
+            overflow: hidden;
+            border: 2px solid #FFD700;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #228B22, #32CD32);
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(50, 205, 50, 0.8);
+        }
+
+        #present-button {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #FF0000, #8B0000);
+            border: 4px solid #FFD700;
+            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            font-size: 48px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255, 0, 0, 0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        #present-button:active {
+            transform: translateX(-50%) scale(0.9);
+            box-shadow: 0 4px 10px rgba(255, 0, 0, 0.5);
+        }
+
+        #present-button.pulse {
+            animation: pulse-button 0.6s ease;
+        }
+
+        @keyframes pulse-button {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.15); }
+        }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 14px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #emoji-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .present-drop {
+            position: absolute;
+            font-size: 36px;
+            animation: present-fall 1.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes present-fall {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--fall-x), 200px) rotate(360deg);
+            }
+        }
+
+        .delivery-burst {
+            position: absolute;
+            font-size: 32px;
+            animation: burst-pop 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes burst-pop {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(var(--tx), var(--ty)) scale(1.3);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(var(--tx) * 1.5), calc(var(--ty) * 1.5)) scale(1);
+            }
+        }
+
+        .snowflake {
+            position: absolute;
+            color: white;
+            font-size: 20px;
+            opacity: 0.8;
+            animation: snowfall linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(-20px) translateX(0);
+            }
+            100% {
+                transform: translateY(100vh) translateX(var(--drift));
+            }
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 22, 40, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+
+        .screen.hidden {
+            display: none;
+        }
+
+        .screen h1 {
+            color: #FFD700;
+            font-size: 48px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 0, 0, 0.5);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .screen p {
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin: 10px 20px;
+            line-height: 1.6;
+        }
+
+        button {
+            background: linear-gradient(135deg, #228B22 0%, #006400 100%);
+            border: 4px solid #FFD700;
+            color: white;
+            font-size: 28px;
+            padding: 18px 48px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .screen h1 {
+                font-size: 36px;
+            }
+            button {
+                font-size: 24px;
+                padding: 15px 36px;
+            }
+            #present-button {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+
+        <!-- Snowfall Container -->
+        <div id="snowfall-container"></div>
+
+        <div id="ui-overlay">
+            <div id="score-panel">
+                <div id="houses-delivered">🎁 Houses Delivered: 0 / 10</div>
+                <div id="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+            </div>
+
+            <div id="controls-hint">
+                📱 Tap to move • 🎁 Press button to drop presents
+            </div>
+
+            <button id="present-button">🎁</button>
+
+            <div id="emoji-container"></div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>🎅 Santa's Present Delivery 🦌</h1>
+            <p style="font-size: 24px;">🎄 Ho Ho Ho! 🎄</p>
+            <p>Help Santa deliver presents to all the houses!</p>
+            <p>Fly over the snowy town and press the 🎁 button<br>when you're above a house to deliver presents!</p>
+            <button id="start-btn">START DELIVERING</button>
+            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap the screen to fly around • Press 🎁 to drop presents</p>
+            <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
+                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
+                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
+                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
+                <a href="christmas-tree.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎄 Tree Decorator</a>
+            </div>
+        </div>
+
+        <!-- Win Screen -->
+        <div id="win-screen" class="screen hidden">
+            <h1>🎉 Merry Christmas! 🎄</h1>
+            <p style="font-size: 28px; color: #FFD700;">Santa delivered all the presents!</p>
+            <p style="font-size: 48px; margin: 20px;">🎅🎁🦌✨</p>
+            <p id="time-display"></p>
+            <button id="restart-btn">DELIVER AGAIN</button>
+            <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
+                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
+                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
+                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
+                <a href="christmas-tree.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎄 Tree Decorator</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SANTA'S PRESENT DELIVERY - Christmas Game
+        // ============================================
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const emojiContainer = document.getElementById('emoji-container');
+        const snowfallContainer = document.getElementById('snowfall-container');
+
+        // Resize canvas to fill screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game State
+        const game = {
+            isPlaying: false,
+            startTime: 0,
+            santa: {
+                x: 300,
+                y: 200,
+                width: 80,
+                height: 60,
+                speed: 0,
+                maxSpeed: 4,
+                acceleration: 0.25,
+                friction: 0.94,
+                vx: 0,
+                vy: 0,
+                angle: 0
+            },
+            camera: {
+                x: 0,
+                y: 0
+            },
+            deliveredHouses: new Set(),
+            totalHouses: 10,
+            presents: []
+        };
+
+        // Town Map - Christmas Village
+        const townMap = {
+            width: 2000,
+            height: 1500,
+            houses: []
+        };
+
+        // Generate houses with chimneys
+        const housePositions = [
+            { x: 200, y: 200 }, { x: 500, y: 300 }, { x: 800, y: 150 },
+            { x: 1100, y: 250 }, { x: 1400, y: 200 }, { x: 1700, y: 300 },
+            { x: 300, y: 600 }, { x: 700, y: 700 }, { x: 1200, y: 650 },
+            { x: 1600, y: 750 }
+        ];
+
+        housePositions.forEach((pos, i) => {
+            townMap.houses.push({
+                id: i,
+                x: pos.x,
+                y: pos.y,
+                width: 120,
+                height: 100,
+                hasPresent: false
+            });
+        });
+
+        // Generate trees for decoration
+        townMap.trees = [];
+        for (let i = 0; i < 30; i++) {
+            const x = Math.random() * townMap.width;
+            const y = Math.random() * townMap.height;
+
+            // Don't place trees on houses
+            const onHouse = townMap.houses.some(house =>
+                x > house.x - 50 && x < house.x + house.width + 50 &&
+                y > house.y - 50 && y < house.y + house.height + 50
+            );
+
+            if (!onHouse) {
+                townMap.trees.push({ x, y, size: 40 + Math.random() * 30 });
+            }
+        }
+
+        // Create snowfall effect
+        function createSnowfall() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const snowflake = document.createElement('div');
+                    snowflake.className = 'snowflake';
+                    snowflake.textContent = '❄';
+                    snowflake.style.left = Math.random() * 100 + '%';
+                    snowflake.style.fontSize = (10 + Math.random() * 20) + 'px';
+                    snowflake.style.animationDuration = (5 + Math.random() * 10) + 's';
+                    snowflake.style.animationDelay = Math.random() * 5 + 's';
+                    snowflake.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+                    snowfallContainer.appendChild(snowflake);
+                }, i * 100);
+            }
+        }
+
+        // Input handling
+        const input = {
+            keys: {},
+            touchActive: false,
+            touchDir: { x: 0, y: 0 }
+        };
+
+        // Touch controls
+        canvas.addEventListener('touchstart', handleTouch);
+        canvas.addEventListener('touchmove', handleTouch);
+        canvas.addEventListener('touchend', () => {
+            input.touchActive = false;
+            input.touchDir = { x: 0, y: 0 };
+        });
+
+        canvas.addEventListener('mousedown', handleTouch);
+        canvas.addEventListener('mousemove', handleTouch);
+        canvas.addEventListener('mouseup', () => {
+            input.touchActive = false;
+            input.touchDir = { x: 0, y: 0 };
+        });
+
+        function handleTouch(e) {
+            if (!game.isPlaying) return;
+
+            e.preventDefault();
+            const touch = e.touches ? e.touches[0] : e;
+            const rect = canvas.getBoundingClientRect();
+
+            const touchX = touch.clientX - rect.left;
+            const touchY = touch.clientY - rect.top;
+
+            const santaScreenX = canvas.width / 2;
+            const santaScreenY = canvas.height / 2;
+
+            const dx = touchX - santaScreenX;
+            const dy = touchY - santaScreenY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 30) {
+                input.touchActive = true;
+                input.touchDir.x = dx / distance;
+                input.touchDir.y = dy / distance;
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            input.keys[e.key] = true;
+            if (e.key === ' ' && game.isPlaying) {
+                e.preventDefault();
+                dropPresent();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            input.keys[e.key] = false;
+        });
+
+        // Present button
+        document.getElementById('present-button').addEventListener('click', (e) => {
+            if (!game.isPlaying) return;
+            e.preventDefault();
+            dropPresent();
+        });
+
+        function dropPresent() {
+            const btn = document.getElementById('present-button');
+            btn.classList.add('pulse');
+            setTimeout(() => btn.classList.remove('pulse'), 600);
+
+            // Create present drop animation
+            const presentEmojis = ['🎁', '🎀', '📦'];
+            const emoji = presentEmojis[Math.floor(Math.random() * presentEmojis.length)];
+
+            for (let i = 0; i < 5; i++) {
+                const present = document.createElement('div');
+                present.className = 'present-drop';
+                present.textContent = emoji;
+                present.style.left = '50%';
+                present.style.top = '50%';
+                present.style.setProperty('--fall-x', (Math.random() - 0.5) * 100 + 'px');
+                emojiContainer.appendChild(present);
+
+                setTimeout(() => present.remove(), 1500);
+            }
+
+            // Check if Santa is over a house
+            checkPresentDelivery();
+        }
+
+        function checkPresentDelivery() {
+            townMap.houses.forEach(house => {
+                if (game.deliveredHouses.has(house.id)) return;
+
+                // Check if Santa is over the house
+                if (game.santa.x > house.x &&
+                    game.santa.x < house.x + house.width &&
+                    game.santa.y > house.y &&
+                    game.santa.y < house.y + house.height) {
+
+                    deliverToHouse(house);
+                }
+            });
+        }
+
+        function deliverToHouse(house) {
+            game.deliveredHouses.add(house.id);
+            house.hasPresent = true;
+
+            // Spawn celebration burst
+            spawnDeliveryBurst();
+
+            // Update UI
+            updateProgress();
+
+            // Check win condition
+            if (game.deliveredHouses.size >= game.totalHouses) {
+                setTimeout(() => winGame(), 800);
+            }
+        }
+
+        function spawnDeliveryBurst() {
+            const burstEmojis = ['⭐', '✨', '🎄', '❄️', '🎉', '🔔'];
+            const numEmojis = 12;
+
+            for (let i = 0; i < numEmojis; i++) {
+                const emoji = burstEmojis[Math.floor(Math.random() * burstEmojis.length)];
+                const angle = (Math.PI * 2 * i) / numEmojis;
+                const distance = 80;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                const burstEl = document.createElement('div');
+                burstEl.className = 'delivery-burst';
+                burstEl.textContent = emoji;
+                burstEl.style.left = '50%';
+                burstEl.style.top = '50%';
+                burstEl.style.setProperty('--tx', tx + 'px');
+                burstEl.style.setProperty('--ty', ty + 'px');
+                emojiContainer.appendChild(burstEl);
+
+                setTimeout(() => burstEl.remove(), 1000);
+            }
+        }
+
+        function updateProgress() {
+            const delivered = game.deliveredHouses.size;
+            document.getElementById('houses-delivered').textContent =
+                `🎁 Houses Delivered: ${delivered} / ${game.totalHouses}`;
+            document.getElementById('progress-fill').style.width =
+                `${(delivered / game.totalHouses) * 100}%`;
+        }
+
+        // Game Functions
+        function updateSanta() {
+            let moveX = 0;
+            let moveY = 0;
+
+            if (input.touchActive) {
+                moveX = input.touchDir.x;
+                moveY = input.touchDir.y;
+            } else {
+                if (input.keys['ArrowLeft'] || input.keys['a']) moveX -= 1;
+                if (input.keys['ArrowRight'] || input.keys['d']) moveX += 1;
+                if (input.keys['ArrowUp'] || input.keys['w']) moveY -= 1;
+                if (input.keys['ArrowDown'] || input.keys['s']) moveY += 1;
+            }
+
+            if (moveX !== 0 || moveY !== 0) {
+                const length = Math.sqrt(moveX * moveX + moveY * moveY);
+                moveX /= length;
+                moveY /= length;
+
+                game.santa.angle = Math.atan2(moveY, moveX);
+
+                game.santa.vx += moveX * game.santa.acceleration;
+                game.santa.vy += moveY * game.santa.acceleration;
+            }
+
+            game.santa.vx *= game.santa.friction;
+            game.santa.vy *= game.santa.friction;
+
+            const speed = Math.sqrt(game.santa.vx * game.santa.vx + game.santa.vy * game.santa.vy);
+            if (speed > game.santa.maxSpeed) {
+                game.santa.vx = (game.santa.vx / speed) * game.santa.maxSpeed;
+                game.santa.vy = (game.santa.vy / speed) * game.santa.maxSpeed;
+            }
+
+            game.santa.x += game.santa.vx;
+            game.santa.y += game.santa.vy;
+
+            game.santa.x = Math.max(60, Math.min(townMap.width - 60, game.santa.x));
+            game.santa.y = Math.max(60, Math.min(townMap.height - 60, game.santa.y));
+
+            game.camera.x = game.santa.x - canvas.width / 2;
+            game.camera.y = game.santa.y - canvas.height / 2;
+
+            game.camera.x = Math.max(0, Math.min(townMap.width - canvas.width, game.camera.x));
+            game.camera.y = Math.max(0, Math.min(townMap.height - canvas.height, game.camera.y));
+        }
+
+        // Drawing Functions
+        function drawBackground() {
+            // Snowy ground
+            ctx.fillStyle = '#E8F4F8';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawTrees() {
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+
+            townMap.trees.forEach(tree => {
+                // Tree (Christmas tree style)
+                ctx.fillStyle = '#0F5F0F';
+                ctx.beginPath();
+                ctx.moveTo(tree.x, tree.y - tree.size);
+                ctx.lineTo(tree.x - tree.size / 2, tree.y);
+                ctx.lineTo(tree.x + tree.size / 2, tree.y);
+                ctx.closePath();
+                ctx.fill();
+
+                // Tree layers
+                ctx.fillStyle = '#1A7A1A';
+                ctx.beginPath();
+                ctx.moveTo(tree.x, tree.y - tree.size * 0.7);
+                ctx.lineTo(tree.x - tree.size / 2.5, tree.y - tree.size * 0.2);
+                ctx.lineTo(tree.x + tree.size / 2.5, tree.y - tree.size * 0.2);
+                ctx.closePath();
+                ctx.fill();
+
+                // Star on top
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '16px Arial';
+                ctx.fillText('⭐', tree.x - 8, tree.y - tree.size - 5);
+            });
+
+            ctx.restore();
+        }
+
+        function drawHouses() {
+            ctx.save();
+            ctx.translate(-game.camera.x, -game.camera.y);
+
+            townMap.houses.forEach(house => {
+                const delivered = game.deliveredHouses.has(house.id);
+
+                // House body
+                ctx.fillStyle = delivered ? '#90EE90' : '#8B4513';
+                ctx.fillRect(house.x, house.y + 30, house.width, house.height - 30);
+
+                // Roof
+                ctx.fillStyle = delivered ? '#228B22' : '#DC143C';
+                ctx.beginPath();
+                ctx.moveTo(house.x - 10, house.y + 30);
+                ctx.lineTo(house.x + house.width / 2, house.y - 10);
+                ctx.lineTo(house.x + house.width + 10, house.y + 30);
+                ctx.closePath();
+                ctx.fill();
+
+                // Chimney
+                ctx.fillStyle = '#8B0000';
+                ctx.fillRect(house.x + house.width - 30, house.y, 20, 35);
+
+                // Door
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(house.x + house.width / 2 - 15, house.y + 60, 30, 40);
+
+                // Windows
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(house.x + 20, house.y + 50, 25, 25);
+                ctx.fillRect(house.x + house.width - 45, house.y + 50, 25, 25);
+
+                // Present indicator if delivered
+                if (delivered) {
+                    ctx.font = '32px Arial';
+                    ctx.fillText('🎁', house.x + house.width / 2 - 16, house.y + house.height + 30);
+
+                    // Checkmark
+                    ctx.fillStyle = '#32CD32';
+                    ctx.font = 'bold 28px Arial';
+                    ctx.fillText('✓', house.x + 10, house.y + 25);
+                }
+
+                // House number
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText(house.id + 1, house.x + house.width / 2 - 5, house.y + 80);
+            });
+
+            ctx.restore();
+        }
+
+        function drawSanta() {
+            ctx.save();
+
+            const screenX = canvas.width / 2;
+            const screenY = canvas.height / 2;
+
+            ctx.translate(screenX, screenY);
+            ctx.rotate(game.santa.angle);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(0, 15, 50, 20, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sleigh
+            ctx.fillStyle = '#8B0000';
+            ctx.fillRect(-30, -10, 60, 30);
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(-30, -10, 60, 8);
+
+            // Santa emoji
+            ctx.font = '48px Arial';
+            ctx.fillText('🎅', -24, 8);
+
+            // Reindeer (in front)
+            ctx.fillText('🦌', -24, -35);
+
+            ctx.restore();
+
+            // Santa's trail
+            if (Math.random() < 0.3) {
+                ctx.save();
+                ctx.translate(-game.camera.x, -game.camera.y);
+                ctx.font = '20px Arial';
+                ctx.fillText('✨', game.santa.x + (Math.random() - 0.5) * 40, game.santa.y + (Math.random() - 0.5) * 40);
+                ctx.restore();
+            }
+        }
+
+        function drawMiniMap() {
+            const miniMapSize = 150;
+            const miniMapScale = miniMapSize / Math.max(townMap.width, townMap.height);
+            const miniMapX = canvas.width - miniMapSize - 20;
+            const miniMapY = canvas.height - miniMapSize - 20;
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(miniMapX, miniMapY, miniMapSize, miniMapSize);
+            ctx.strokeStyle = '#8B0000';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(miniMapX, miniMapY, miniMapSize, miniMapSize);
+
+            ctx.save();
+            ctx.translate(miniMapX, miniMapY);
+            ctx.scale(miniMapScale, miniMapScale);
+
+            // Houses
+            townMap.houses.forEach(house => {
+                ctx.fillStyle = game.deliveredHouses.has(house.id) ? '#32CD32' : '#DC143C';
+                ctx.fillRect(house.x, house.y, house.width, house.height);
+            });
+
+            // Santa
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(game.santa.x, game.santa.y, 15, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBackground();
+            drawTrees();
+            drawHouses();
+            drawSanta();
+            drawMiniMap();
+        }
+
+        function gameLoop() {
+            if (game.isPlaying) {
+                updateSanta();
+            }
+
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            game.isPlaying = true;
+            game.startTime = Date.now();
+            game.deliveredHouses.clear();
+
+            // Reset all houses
+            townMap.houses.forEach(house => house.hasPresent = false);
+
+            // Reset Santa position
+            game.santa.x = 300;
+            game.santa.y = 200;
+            game.santa.vx = 0;
+            game.santa.vy = 0;
+            game.santa.angle = 0;
+
+            updateProgress();
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('win-screen').classList.add('hidden');
+        }
+
+        function winGame() {
+            game.isPlaying = false;
+
+            const timeElapsed = Math.floor((Date.now() - game.startTime) / 1000);
+            const minutes = Math.floor(timeElapsed / 60);
+            const seconds = timeElapsed % 60;
+
+            document.getElementById('time-display').textContent =
+                `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            document.getElementById('win-screen').classList.remove('hidden');
+        }
+
+        // Event Listeners
+        document.getElementById('start-btn').addEventListener('click', () => {
+            startGame();
+            createSnowfall();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Start game loop
+        gameLoop();
+        createSnowfall();
+    </script>
+</body>
+</html>

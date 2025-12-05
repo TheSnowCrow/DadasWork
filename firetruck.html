@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Fire Truck Hero 🚒</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body,
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* UI Overlay */
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            pointer-events: auto;
+            transition: opacity 0.5s;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .screen h1 {
+            color: #FF4500;
+            font-size: 48px;
+            text-shadow: 0 0 20px rgba(255, 69, 0, 0.8);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .screen p {
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            margin: 10px 20px;
+            line-height: 1.6;
+        }
+
+        button.start-btn {
+            background: linear-gradient(135deg, #FF4500, #8B0000);
+            border: 4px solid #FFD700;
+            color: white;
+            font-size: 28px;
+            padding: 18px 48px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            box-shadow: 0 8px 20px rgba(255, 69, 0, 0.4);
+            transition: transform 0.2s;
+            margin-top: 30px;
+        }
+
+        button.start-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Controls Hints */
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: auto;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        #controls-hint.hidden {
+            display: none;
+        }
+
+        /* Progress Bar for Fire */
+        #mission-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 2px solid #FF4500;
+            display: none;
+            /* Shown in Rescue Mode */
+        }
+
+        #mission-panel.driving {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            right: auto;
+            display: block;
+        }
+
+        #progress-label {
+            color: #FFD700;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        #progress-bar {
+            width: 200px;
+            height: 15px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #555;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FF4500, #FFA500);
+            width: 100%;
+            /* Starts full (fire is 100%) */
+            transition: width 0.2s;
+        }
+
+        /* Mobile Controls */
+        #mobile-controls {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            display: none;
+            /* Active via JS */
+            justify-content: space-between;
+            padding: 0 40px;
+            pointer-events: none;
+        }
+
+        .control-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+
+        .control-btn:active,
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
+        }
+
+        #spray-btn {
+            background: rgba(0, 191, 255, 0.3);
+            border-color: rgba(0, 191, 255, 0.8);
+            font-size: 40px;
+            width: 90px;
+            height: 90px;
+        }
+
+        /* Navigation Menu */
+        #nav-menu {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: auto;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+
+        <div id="ui-overlay">
+            <div id="nav-menu">
+                <a href="index.html" class="nav-btn">⬅ Menu</a>
+            </div>
+
+            <div id="mission-panel">
+                <div id="progress-label">DISTANCE TO FIRE</div>
+                <div id="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+            </div>
+
+            <div id="mobile-controls">
+                <div id="move-controls" style="display:flex; gap:20px;">
+                    <div class="control-btn" id="btn-left">⬅</div>
+                    <div class="control-btn" id="btn-right">➡</div>
+                </div>
+                <div class="control-btn" id="spray-btn">💧</div>
+            </div>
+
+            <div id="controls-hint" title="Tap to dismiss">
+                💻 Arrows to Drive • Mouse to Aim/Spray <br>
+                📱 Touch buttons to play
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>🚒 Fire Truck Hero 🚒</h1>
+            <p>EMERGENCY! A building is on fire!</p>
+            <p>1. Drive fast to the scene! 🏎️<br>2. Spray water to put out the fire! 💧</p>
+            <button class="start-btn" id="start-btn">START RESCUE!</button>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen hidden">
+            <h1>🎉 MISSION ACCOMPLISHED! 🎉</h1>
+            <p>You saved the building!</p>
+            <p style="font-size: 40px;">🚒💦🔥✅</p>
+            <button class="start-btn" id="restart-btn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- Game Constants & State ---
+        const GAME_STATES = {
+            MENU: 0,
+            DRIVING: 1,
+            ARRIVED: 2, // Short transition stopping the truck
+            RESCUE: 3,
+            VICTORY: 4
+        };
+
+        const config = {
+            gravity: 0.4,
+            waterSpeed: 15,
+            fireResistance: 2, // Hits needed to kill a fire particle
+            driveDistance: 4000 // Distance to drive
+        };
+
+        let state = {
+            current: GAME_STATES.MENU,
+            distanceTraveled: 0,
+            truckX: 100,
+            truckSpeed: 0,
+            maxSpeed: 12,
+            sirenTimer: 0,
+            sirenState: false,
+            waterParticles: [],
+            steamParticles: [],
+            fireParticles: [],
+            hoseAngle: -Math.PI / 4, // 45 degrees up
+            isSpraying: false
+        };
+
+        const input = {
+            left: false,
+            right: false,
+            mouse: { x: 0, y: 0, down: false }
+        };
+
+        // --- Input Handling ---
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') input.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') input.right = true;
+            if (e.key === ' ') { state.isSpraying = true; input.mouse.down = true; } // Space to spray
+        });
+        window.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') input.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') input.right = false;
+            if (e.key === ' ') { state.isSpraying = false; input.mouse.down = false; }
+        });
+
+        // Mouse Aiming
+        window.addEventListener('mousemove', e => {
+            input.mouse.x = e.clientX;
+            input.mouse.y = e.clientY;
+
+            if (state.current === GAME_STATES.RESCUE) {
+                // Calculate angle from truck hose position (approx center screen, lower)
+                // Hose pivot is roughly: truckX + 100, truckY - 40
+                // Truck Y in driving is bottom aligned, let's say canvas.height - 100
+                // We'll define truck pivot properly in render
+            }
+        });
+        window.addEventListener('mousedown', () => {
+            state.isSpraying = true;
+            input.mouse.down = true;
+        });
+        window.addEventListener('mouseup', () => {
+            state.isSpraying = false;
+            input.mouse.down = false;
+        });
+
+        // Touch Controls
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+        const btnSpray = document.getElementById('spray-btn');
+
+        const addTouch = (el, key, isSpray = false) => {
+            el.addEventListener('touchstart', (e) => { e.preventDefault(); if (isSpray) state.isSpraying = true; else input[key] = true; el.classList.add('active'); });
+            el.addEventListener('touchend', (e) => { e.preventDefault(); if (isSpray) state.isSpraying = false; else input[key] = false; el.classList.remove('active'); });
+        };
+        addTouch(btnLeft, 'left');
+        addTouch(btnRight, 'right');
+        addTouch(btnSpray, null, true);
+
+        // Mobile detection for UI
+        if ('ontouchstart' in window) {
+            document.getElementById('mobile-controls').style.display = 'flex';
+            document.getElementById('controls-hint').innerHTML = "📱 Hold arrows to Drive • Hold 💧 to Spray";
+        }
+
+        // --- Game Logic ---
+
+        function initGame() {
+            state.current = GAME_STATES.DRIVING;
+            state.distanceTraveled = 0;
+            state.truckX = 100;
+            state.truckSpeed = 0;
+            state.waterParticles = [];
+            state.steamParticles = [];
+            state.fireParticles = [];
+
+            // Setup Fire Geometry
+            createFire(canvas.width - 250, canvas.height - 150);
+
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('mission-panel').classList.remove('driving'); // Reset class
+            document.getElementById('mission-panel').style.display = 'block';
+
+            updateUI(GAME_STATES.DRIVING);
+        }
+
+        function createFire(baseX, baseY) {
+            // Create a grid of fire particles for a building shape
+            const rows = 6;
+            const cols = 4;
+            const cellSize = 40;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    // Random chance for fire in each window
+                    if (Math.random() > 0.2) {
+                        state.fireParticles.push({
+                            x: baseX + c * cellSize,
+                            y: baseY - r * cellSize, // Build upwards
+                            w: 30,
+                            h: 30,
+                            health: 100, // Water hits reduces health
+                            maxHealth: 100
+                        });
+                    }
+                }
+            }
+        }
+
+        function update(dt) {
+            if (state.current === GAME_STATES.DRIVING) {
+                updateDriving(dt);
+            } else if (state.current === GAME_STATES.ARRIVED) {
+                // Auto-brake
+                state.truckSpeed *= 0.9;
+                state.truckX += state.truckSpeed;
+                if (state.truckSpeed < 0.1) {
+                    state.current = GAME_STATES.RESCUE;
+                    updateUI(GAME_STATES.RESCUE);
+                }
+            } else if (state.current === GAME_STATES.RESCUE) {
+                updateRescue(dt);
+            }
+
+            // Global Updates
+            updateParticles();
+
+            // Siren
+            state.sirenTimer += dt;
+            if (state.sirenTimer > 0.3) { // Flash every 0.3s
+                state.sirenTimer = 0;
+                state.sirenState = !state.sirenState;
+            }
+        }
+
+        function updateDriving(dt) {
+            // Acceleration
+            if (input.right) state.truckSpeed += 0.5;
+            else if (input.left) state.truckSpeed -= 0.5;
+            else state.truckSpeed *= 0.95; // Friction
+
+            // Clamp speed
+            state.truckSpeed = Math.max(-2, Math.min(state.maxSpeed, state.truckSpeed));
+            state.distanceTraveled += state.truckSpeed;
+
+            // Destination Check
+            if (state.distanceTraveled >= config.driveDistance) {
+                state.current = GAME_STATES.ARRIVED;
+            }
+
+            // UI Update
+            const progress = state.distanceTraveled / config.driveDistance;
+            document.getElementById('progress-fill').style.width = `${Math.min(100, progress * 100)}%`;
+            document.getElementById('progress-label').textContent = "DISTANCE TO FIRE";
+
+            // Background Elements (Parallax or simple movement)
+        }
+
+        function updateRescue(dt) {
+            // Aiming Hose
+            // Pivot point
+            const pivotX = state.truckX + 120;
+            const pivotY = canvas.height - 110;
+
+            // If using mouse, look at mouse. If touch, auto-sweep or simple up/down?
+            // For simplicity on touch, let's map left/right buttons to angle up/down instead of move
+            if ('ontouchstart' in window) {
+                if (input.left) state.hoseAngle -= 0.05;
+                if (input.right) state.hoseAngle += 0.05;
+            } else {
+                // Mouse Aim
+                const dx = input.mouse.x - pivotX;
+                const dy = input.mouse.y - pivotY;
+                state.hoseAngle = Math.atan2(dy, dx);
+            }
+
+            // Clamp Angle
+            state.hoseAngle = Math.max(-Math.PI / 1.5, Math.min(0, state.hoseAngle));
+
+            // Shooting Water
+            if (state.isSpraying) {
+                // Spawn water
+                for (let i = 0; i < 3; i++) { // Spray density
+                    const speed = config.waterSpeed + (Math.random() - 0.5) * 2;
+                    const spread = (Math.random() - 0.5) * 0.1;
+                    state.waterParticles.push({
+                        x: pivotX + Math.cos(state.hoseAngle) * 40,
+                        y: pivotY + Math.sin(state.hoseAngle) * 40,
+                        vx: Math.cos(state.hoseAngle + spread) * speed,
+                        vy: Math.sin(state.hoseAngle + spread) * speed,
+                        life: 100
+                    });
+                }
+            }
+
+            // Check Win Condition
+            if (state.fireParticles.length === 0) {
+                state.current = GAME_STATES.VICTORY;
+                document.getElementById('victory-screen').classList.remove('hidden');
+            }
+
+            // UI
+            const totalHealth = state.fireParticles.reduce((acc, f) => acc + f.health, 0);
+            const totalMax = state.fireParticles.reduce((acc, f) => acc + f.maxHealth, 0); // Approx
+            // Actually max health constant is easier.
+            // Just use remaining particles for simplicity or sum health
+            // Current remaining fire %
+            // We calculated max health initially? No, let's just use count.
+            // Or better:
+            // document.getElementById('progress-fill').style.width = ...
+            document.getElementById('progress-label').textContent = "FIRE REMAINING";
+            // Can't easily calc %, so let's just do (current particles / initial particles) if we tracked it
+            // Let's just track total health roughly.
+        }
+
+        function updateParticles() {
+            // Water physics
+            for (let i = state.waterParticles.length - 1; i >= 0; i--) {
+                const p = state.waterParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += config.gravity;
+                p.life--;
+
+                // Ground collision
+                if (p.y > canvas.height) p.life = 0;
+
+                // Fire Collision
+                if (state.current === GAME_STATES.RESCUE) {
+                    let hit = false;
+                    for (let j = state.fireParticles.length - 1; j >= 0; j--) {
+                        const f = state.fireParticles[j];
+                        if (p.x > f.x && p.x < f.x + f.w && p.y > f.y && p.y < f.y + f.h) {
+                            f.health -= 5;
+                            spawnSteam(p.x, p.y);
+                            hit = true;
+                            if (f.health <= 0) {
+                                state.fireParticles.splice(j, 1);
+                            }
+                            break; // One water drop hits one fire
+                        }
+                    }
+                    if (hit) p.life = 0;
+                }
+
+                if (p.life <= 0) state.waterParticles.splice(i, 1);
+            }
+
+            // Steam
+            for (let i = state.steamParticles.length - 1; i >= 0; i--) {
+                const p = state.steamParticles[i];
+                p.y -= 1; // Float up
+                p.x += (Math.random() - 0.5);
+                p.life--;
+                if (p.life <= 0) state.steamParticles.splice(i, 1);
+            }
+        }
+
+        function spawnSteam(x, y) {
+            state.steamParticles.push({
+                x: x, y: y, life: 30, size: 10 + Math.random() * 10
+            });
+        }
+
+        // --- Rendering ---
+
+        function draw() {
+            // Clear
+            ctx.fillStyle = '#1a1a2e'; // Night sky
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Ground
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            ctx.fillStyle = '#FFD700'; // Road lines
+            // Offset lines by distanceTraveled
+            const roadOffset = -(state.distanceTraveled % 100);
+            for (let i = 0; i < canvas.width / 100 + 1; i++) {
+                ctx.fillRect(i * 100 + roadOffset, canvas.height - 25, 40, 5);
+            }
+
+            // Draw Background (Simple Buildings)
+            drawBackground();
+
+            // Draw Truck
+            drawTruck();
+
+            // Draw Action Scene (Fire)
+            if (state.current === GAME_STATES.RESCUE || state.current === GAME_STATES.ARRIVED) {
+                drawRescueScene();
+            }
+        }
+
+        function drawBackground() {
+            ctx.save();
+            // Parallax stars
+            ctx.fillStyle = 'white';
+
+            // Buildings (Scroll with distance)
+            const bgOffset = -(state.distanceTraveled * 0.5) % 400; // Parallax
+            // Draw repeating skyline
+            ctx.fillStyle = '#0a0a1a';
+            // Just simple silhouettes
+            for (let i = -1; i < canvas.width / 200 + 2; i++) {
+                const h = 100 + Math.sin(i * 132) * 50;
+                ctx.fillRect(i * 200 + bgOffset, canvas.height - 50 - h, 150, h);
+                // Windows
+                ctx.fillStyle = '#222';
+                ctx.fillRect(i * 200 + bgOffset + 20, canvas.height - 50 - h + 20, 10, 10);
+                ctx.fillStyle = '#0a0a1a'; // Reset
+            }
+            ctx.restore();
+        }
+
+        function drawTruck() {
+            ctx.save();
+            // Position: In Driving, it's roughly fixed X unless accelerating/braking visual shift
+            // In Rescue, it has arrived at a spot.
+
+            // Let's keep it centered-ish during drive, and lock it during rescue
+            let drawX = state.truckX;
+            if (state.current === GAME_STATES.DRIVING) {
+                // visual bobbing
+                drawX = 100; // Fixed on screen while world moves
+            } else {
+                // In arrived/rescue, we draw it relative to the world or fixed?
+                // Let's say in Rescue it is parked on left side.
+                drawX = 100;
+            }
+
+            const groundY = canvas.height - 50;
+            const y = groundY;
+
+            ctx.translate(drawX, y);
+
+            // Truck Body
+            ctx.fillStyle = '#CC0000'; // Fire red
+            ctx.fillRect(0, -60, 140, 50); // Main body
+            ctx.fillRect(140, -50, 40, 40); // Cab
+
+            // Details
+            ctx.fillStyle = '#FFFFFF'; // Stripe
+            ctx.fillRect(0, -35, 140, 10);
+
+            // Wheels
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.arc(30, -5, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(110, -5, 12, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(160, -5, 12, 0, Math.PI * 2); ctx.fill();
+
+            // Hose Nozzle / Ladder Base
+            ctx.fillStyle = '#555';
+            ctx.fillRect(80, -70, 40, 10);
+
+            // Ladder (angled)
+            ctx.save();
+            ctx.translate(100, -65);
+            ctx.rotate(-0.1);
+            ctx.fillStyle = '#FFD700'; // Gold ladder
+            ctx.fillRect(-60, -10, 120, 8);
+            ctx.restore();
+
+            // Siren Lights
+            if (state.sirenState) {
+                ctx.fillStyle = '#0000FF'; // Blue
+                ctx.beginPath(); ctx.arc(150, -60, 5, 0, Math.PI * 2); ctx.fill();
+                // Glow
+                ctx.fillStyle = 'rgba(0,0,255,0.4)';
+                ctx.beginPath(); ctx.arc(150, -60, 20, 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.fillStyle = '#FF0000'; // Red
+                ctx.beginPath(); ctx.arc(160, -60, 5, 0, Math.PI * 2); ctx.fill();
+                // Glow
+                ctx.fillStyle = 'rgba(255,0,0,0.4)';
+                ctx.beginPath(); ctx.arc(160, -60, 20, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // Aimable Hose Nozzle (Only in Rescue)
+            if (state.current === GAME_STATES.RESCUE) {
+                ctx.save();
+                ctx.translate(120, -60); // Pivot
+                ctx.rotate(state.hoseAngle);
+                ctx.fillStyle = '#444';
+                ctx.fillRect(0, -5, 40, 10); // Barrel
+                ctx.fillStyle = '#666';
+                ctx.fillRect(35, -7, 10, 14); // Tip
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+
+        function drawRescueScene() {
+            // Draw Building on fire
+            // In driving mode, we don't see it. In rescue, it's at fixed pos
+            const buildingX = canvas.width - 250;
+            const groundY = canvas.height - 50;
+
+            ctx.fillStyle = '#1a0d00'; // Burnt building
+            ctx.fillRect(buildingX - 20, groundY - 300, 200, 300);
+            // Windows logic? We have particles.
+
+            // Fire Particles
+            ctx.save();
+            for (const f of state.fireParticles) {
+                ctx.fillStyle = `rgba(255, ${Math.random() * 100}, 0, ${f.health / 100})`;
+                ctx.beginPath();
+                // Flicker
+                const s = f.w * (0.8 + Math.random() * 0.4);
+                ctx.rect(f.x, f.y, s, f.h);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Water Particles
+            ctx.fillStyle = '#00BFFF';
+            for (const p of state.waterParticles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Steam
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            for (const p of state.steamParticles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // --- Loop ---
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            update(Math.min(dt, 0.1)); // Cap dt
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // UI Helpers
+        function updateUI(newState) {
+            const hint = document.getElementById('controls-hint');
+            if (newState === GAME_STATES.DRIVING) {
+                document.getElementById('mission-panel').classList.add('driving');
+                document.getElementById('spray-btn').style.display = 'none';
+                document.getElementById('move-controls').style.display = 'flex';
+                hint.innerHTML = "💻 Arrows to Drive • Get to the fire!";
+            } else if (newState === GAME_STATES.RESCUE) {
+                document.getElementById('mission-panel').classList.remove('driving');
+                document.getElementById('spray-btn').style.display = 'flex';
+                document.getElementById('move-controls').style.display = 'flex'; // Use arrows to aim now
+                document.getElementById('btn-left').textContent = '⬆'; // Repurpose for Aim Up
+                document.getElementById('btn-right').textContent = '⬇';
+
+                // Update touch handlers?
+                // Actually our logic uses input.left/right for Aim in Rescue already, so text change is enough.
+
+                hint.innerHTML = "🎯 Aim with Mouse/Arrows • 💧 Spray Water!";
+            }
+        }
+
+        // Listeners
+        document.getElementById('start-btn').addEventListener('click', initGame);
+        document.getElementById('restart-btn').addEventListener('click', initGame);
+
+        document.getElementById('controls-hint').addEventListener('click', function () {
+            this.classList.add('hidden');
+        });
+
+        // Start
+        requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+
+</html>

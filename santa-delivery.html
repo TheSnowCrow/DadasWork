@@ -425,23 +425,51 @@
         };
 
         // Generate houses with chimneys
-        const housePositions = [
-            { x: 200, y: 200 }, { x: 500, y: 300 }, { x: 800, y: 150 },
-            { x: 1100, y: 250 }, { x: 1400, y: 200 }, { x: 1700, y: 300 },
-            { x: 300, y: 600 }, { x: 700, y: 700 }, { x: 1200, y: 650 },
-            { x: 1600, y: 750 }
-        ];
+        function generateHouses() {
+            townMap.houses = [];
+            const attempts = 100;
+            const houseCount = 10;
 
-        housePositions.forEach((pos, i) => {
-            townMap.houses.push({
-                id: i,
-                x: pos.x,
-                y: pos.y,
-                width: 120,
-                height: 100,
-                hasPresent: false
-            });
-        });
+            for (let i = 0; i < houseCount; i++) {
+                let safe = false;
+                let x, y;
+
+                for (let j = 0; j < attempts; j++) {
+                    // Keep margin from edges (100px)
+                    x = 100 + Math.random() * (townMap.width - 320);
+                    y = 100 + Math.random() * (townMap.height - 300);
+
+                    // Check collision with existing houses
+                    let overlap = false;
+                    for (const house of townMap.houses) {
+                        const dist = Math.hypot(x - house.x, y - house.y);
+                        if (dist < 400) { // Keep houses fairly spread out
+                            overlap = true;
+                            break;
+                        }
+                    }
+
+                    if (!overlap) {
+                        safe = true;
+                        break;
+                    }
+                }
+
+                if (safe) {
+                    townMap.houses.push({
+                        id: i,
+                        x: x,
+                        y: y,
+                        width: 120,
+                        height: 100,
+                        hasPresent: false
+                    });
+                }
+            }
+        }
+
+        // Initial generation
+        generateHouses();
 
         // Generate trees for decoration
         townMap.trees = [];
@@ -572,11 +600,13 @@
             townMap.houses.forEach(house => {
                 if (game.deliveredHouses.has(house.id)) return;
 
-                // Check if Santa is over the house
-                if (game.santa.x > house.x &&
-                    game.santa.x < house.x + house.width &&
-                    game.santa.y > house.y &&
-                    game.santa.y < house.y + house.height) {
+                // Check if Santa is over the house (with generous buffer)
+                const buffer = 80; // Make hit area much bigger
+
+                if (game.santa.x > house.x - buffer &&
+                    game.santa.x < house.x + house.width + buffer &&
+                    game.santa.y > house.y - buffer &&
+                    game.santa.y < house.y + house.height + buffer) {
 
                     deliverToHouse(house);
                 }
@@ -1018,7 +1048,9 @@
             game.deliveredHouses.clear();
 
             // Reset all houses
-            townMap.houses.forEach(house => house.hasPresent = false);
+            generateHouses(); // Regenerate positions for new game
+            game.deliveredHouses.clear(); // Clear delivered set after regeneration
+            // Note: tree positions remain static per session but could be randomized too if desired
 
             // Reset Santa position
             game.santa.x = 300;

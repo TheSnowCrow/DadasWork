@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -13,10 +14,94 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            user-select: none;
             -webkit-user-select: none;
         }
 
-        body, html {
+        /* Styles for Hamburger Menu */
+        #game-nav {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2000;
+        }
+
+        #nav-toggle {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #nav-toggle:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        #nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 2001;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #nav-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #nav-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 10px 30px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        body,
+        html {
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -110,9 +195,17 @@
         }
 
         @keyframes decorationPop {
-            0% { transform: scale(0); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .decoration.light {
@@ -120,8 +213,15 @@
         }
 
         @keyframes twinkle {
-            0% { opacity: 0.6; filter: brightness(1); }
-            100% { opacity: 1; filter: brightness(1.5); }
+            0% {
+                opacity: 0.6;
+                filter: brightness(1);
+            }
+
+            100% {
+                opacity: 1;
+                filter: brightness(1.5);
+            }
         }
 
         .decoration.ornament {
@@ -129,8 +229,15 @@
         }
 
         @keyframes swing {
-            0%, 100% { transform: rotate(-5deg); }
-            50% { transform: rotate(5deg); }
+
+            0%,
+            100% {
+                transform: rotate(-5deg);
+            }
+
+            50% {
+                transform: rotate(5deg);
+            }
         }
 
         #star-topper {
@@ -145,8 +252,15 @@
         }
 
         @keyframes starGlow {
-            0%, 100% { filter: drop-shadow(0 0 10px #FFD700); }
-            50% { filter: drop-shadow(0 0 25px #FFD700) drop-shadow(0 0 35px #FFA500); }
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 10px #FFD700);
+            }
+
+            50% {
+                filter: drop-shadow(0 0 25px #FFD700) drop-shadow(0 0 35px #FFA500);
+            }
         }
 
         #decoration-panel {
@@ -251,6 +365,7 @@
             0% {
                 transform: translateY(-20px) translateX(0);
             }
+
             100% {
                 transform: translateY(100vh) translateX(var(--drift));
             }
@@ -332,6 +447,7 @@
                 opacity: 1;
                 transform: translate(0, 0) rotate(0deg) scale(0.5);
             }
+
             100% {
                 opacity: 0;
                 transform: translate(var(--tx), var(--ty)) rotate(360deg) scale(1.5);
@@ -342,10 +458,12 @@
             .screen h1 {
                 font-size: 36px;
             }
+
             button.start-btn {
                 font-size: 24px;
                 padding: 15px 36px;
             }
+
             .decoration-btn {
                 min-width: 60px;
                 height: 60px;
@@ -354,6 +472,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="game-container">
         <div id="tree-area">
@@ -395,6 +514,29 @@
 
         <div id="celebration-overlay"></div>
 
+        <!-- Hamburger Menu -->
+        <div id="ui-overlay-menu"
+            style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1000; pointer-events: none;">
+            <div id="game-nav" style="pointer-events: auto;">
+                <button id="nav-toggle">☰</button>
+            </div>
+
+            <div id="nav-overlay" class="hidden">
+                <button id="nav-close">✕</button>
+                <div class="nav-links">
+                    <a href="index.html">🏠 Home</a>
+                    <a href="firetruck.html">🚒 Fire Truck</a>
+                    <a href="excavator.html">🚜 Excavator</a>
+                    <a href="submarine.html">🌊 Submarine</a>
+                    <a href="drive.html">🚗 Drive Game</a>
+                    <a href="racer.html">🏎️ Racer Game</a>
+                    <a href="town-racer.html">🏙️ Town Adventure</a>
+                    <a href="santa-delivery.html">🎅 Santa Delivery</a>
+                    <a href="christmas-tree.html">🎄 Tree Decorator</a>
+                </div>
+            </div>
+        </div>
+
         <!-- Start Screen -->
         <div id="start-screen" class="screen">
             <h1>🎄 Decorate the Christmas Tree 🎄</h1>
@@ -402,32 +544,24 @@
             <p>Choose decorations and tap on the tree to place them!</p>
             <p>Add lights 💡, ornaments 🔴, stars ⭐, and more!</p>
             <button class="start-btn" id="start-btn">START DECORATING</button>
-            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap decorations at the bottom, then tap the tree to place them</p>
-            <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
-                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
-                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
-                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
-                <a href="santa-delivery.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎅 Santa Delivery</a>
-            </div>
+            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap decorations at the bottom, then tap the tree
+                to place them</p>
+            <!-- Old links removed -->
         </div>
+    </div>
 
-        <!-- Complete Screen -->
-        <div id="complete-screen" class="screen hidden">
-            <h1>🎉 Beautiful Tree! 🎉</h1>
-            <p style="font-size: 28px; color: #FFD700;">Your Christmas tree looks amazing!</p>
-            <p style="font-size: 48px; margin: 20px;">🎄✨🎁⭐</p>
-            <p id="decoration-count"></p>
-            <button class="start-btn" id="restart-btn">DECORATE AGAIN</button>
-            <button class="start-btn" id="continue-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">KEEP DECORATING</button>
-            <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
-                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
-                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
-                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
-                <a href="santa-delivery.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎅 Santa Delivery</a>
-            </div>
+    <!-- Complete Screen -->
+    <div id="complete-screen" class="screen hidden">
+        <h1>🎉 Beautiful Tree! 🎉</h1>
+        <p style="font-size: 28px; color: #FFD700;">Your Christmas tree looks amazing!</p>
+        <p style="font-size: 48px; margin: 20px;">🎄✨🎁⭐</p>
+        <p id="decoration-count"></p>
+        <button class="start-btn" id="restart-btn">DECORATE AGAIN</button>
+        <button class="start-btn" id="continue-btn"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">KEEP DECORATING</button>
+        <div style="margin-top: 30px;">
         </div>
+    </div>
     </div>
 
     <script>
@@ -655,6 +789,21 @@
 
         // Initialize
         createSnowfall();
+
+        // Menu Logic
+        const navToggle = document.getElementById('nav-toggle');
+        const navOverlay = document.getElementById('nav-overlay');
+        const navClose = document.getElementById('nav-close');
+
+        if (navToggle && navOverlay && navClose) {
+            navToggle.addEventListener('click', () => {
+                navOverlay.classList.remove('hidden');
+            });
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.add('hidden');
+            });
+        }
     </script>
 </body>
+
 </html>

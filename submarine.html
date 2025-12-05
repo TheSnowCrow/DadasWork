@@ -17,6 +17,88 @@
             user-select: none;
         }
 
+        /* Styles for Hamburger Menu */
+        #game-nav {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2000;
+        }
+
+        #nav-toggle {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #nav-toggle:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        #nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 2001;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #nav-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #nav-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 10px 30px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(180deg, #001a33 0%, #003d5c 50%, #004d73 100%);
@@ -388,57 +470,7 @@
     <!-- Background bubbles -->
     <div id="bubbles"></div>
 
-    <!-- Floating Game Menu -->
-    <div style="position: fixed; bottom: 10px; left: 10px; z-index: 100;">
-        <button id="game-menu-toggle"
-            style="background: rgba(100, 100, 255, 0.4); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 12px; padding: 10px 14px; color: white; font-size: 12px; cursor: pointer; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);">
-            <span style="font-size: 18px;">🎮</span>
-            <span>Games</span>
-        </button>
-        <div id="game-menu-list"
-            style="position: absolute; bottom: 100%; left: 0; margin-bottom: 10px; background: rgba(30, 30, 40, 0.95); border-radius: 15px; padding: 8px; min-width: 180px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); opacity: 0; transform: scale(0.8) translateY(10px); pointer-events: none; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);">
-            <a href="index.html"
-                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
-                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
-                onmouseout="this.style.background='transparent'">
-                <span style="font-size: 20px; width: 24px; text-align: center;">⌨️</span>
-                <span style="flex: 1; font-weight: 500;">Magic Typing</span>
-            </a>
-            <a href="drive.html"
-                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
-                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
-                onmouseout="this.style.background='transparent'">
-                <span style="font-size: 20px; width: 24px; text-align: center;">🚗</span>
-                <span style="flex: 1; font-weight: 500;">Drive Game</span>
-            </a>
-            <a href="racer.html"
-                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
-                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
-                onmouseout="this.style.background='transparent'">
-                <span style="font-size: 20px; width: 24px; text-align: center;">🏁</span>
-                <span style="flex: 1; font-weight: 500;">Racer</span>
-            </a>
-            <a href="town-racer.html"
-                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
-                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
-                onmouseout="this.style.background='transparent'">
-                <span style="font-size: 20px; width: 24px; text-align: center;">🌆</span>
-                <span style="flex: 1; font-weight: 500;">Town Racer</span>
-            </a>
-            <a href="submarine.html"
-                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: rgba(255,255,255,0.6); border-radius: 10px; font-size: 13px; margin: 2px 0; pointer-events: none;">
-                <span style="font-size: 20px; width: 24px; text-align: center;">🌊</span>
-                <span style="flex: 1; font-weight: 500;">Submarine ✓</span>
-            </a>
-            <a href="excavator.html"
-                style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; text-decoration: none; color: white; border-radius: 10px; transition: all 0.2s ease; font-size: 13px; margin: 2px 0;"
-                onmouseover="this.style.background='rgba(255,255,255,0.15)'"
-                onmouseout="this.style.background='transparent'">
-                <span style="font-size: 20px; width: 24px; text-align: center;">🚜</span>
-                <span style="flex: 1; font-weight: 500;">Excavator</span>
-            </a>
-        </div>
-    </div>
+    <!-- Old menu removed -->
     <script>
         (function () {
             const toggle = document.getElementById('game-menu-toggle');
@@ -488,11 +520,33 @@
         <p class="instructions mobile-only">Touch screen to control your submarine</p>
     </div>
 
-    <!-- Game Container -->
+    <!-- Game Container with new Menu -->
     <div id="gameContainer">
         <div class="hud">
-            <div class="hud-item back-btn" onclick="returnToMenu()">« Menu</div>
-            <div class="hud-item" id="levelDisplay">Level 1</div>
+            <!-- Replaced Back Button with Hamburger below -->
+            <div class="hud-item" style="color: #FFD700; background: transparent; border: none; padding-left: 60px;">
+                LEVEL <span id="levelDisplay">1</span></div>
+            <div class="hud-item left">TREASURE: <span id="treasureDisplay">0/3</span></div>
+        </div>
+
+        <!-- Hamburger Menu -->
+        <div id="game-nav">
+            <button id="nav-toggle">☰</button>
+        </div>
+
+        <div id="nav-overlay" class="hidden">
+            <button id="nav-close">✕</button>
+            <div class="nav-links">
+                <a href="index.html">🏠 Home</a>
+                <a href="firetruck.html">🚒 Fire Truck</a>
+                <a href="excavator.html">🚜 Excavator</a>
+                <a href="submarine.html">🌊 Submarine</a>
+                <a href="drive.html">🚗 Drive Game</a>
+                <a href="racer.html">🏎️ Racer Game</a>
+                <a href="town-racer.html">🏙️ Town Adventure</a>
+                <a href="santa-delivery.html">🎅 Santa Delivery</a>
+                <a href="christmas-tree.html">🎄 Tree Decorator</a>
+            </div>
         </div>
 
         <canvas id="gameCanvas"></canvas>
@@ -1312,6 +1366,20 @@
 
         // Initialize game
         init();
+
+        // Menu Logic
+        const navToggle = document.getElementById('nav-toggle');
+        const navOverlay = document.getElementById('nav-overlay');
+        const navClose = document.getElementById('nav-close');
+
+        if (navToggle && navOverlay && navClose) {
+            navToggle.addEventListener('click', () => {
+                navOverlay.classList.remove('hidden');
+            });
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.add('hidden');
+            });
+        }
     </script>
 </body>
 

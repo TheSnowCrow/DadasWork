@@ -141,11 +141,37 @@
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 12px 24px;
+            padding: 12px 35px 12px 24px;
+            /* Extra padding right for close button */
             border-radius: 20px;
             font-size: 14px;
             text-align: center;
+            pointer-events: auto;
+            /* Allow clicking */
+            cursor: pointer;
+            z-index: 50;
+            /* Ensure on top */
+            transition: opacity 0.3s;
+        }
+
+        #controls-hint:hover {
+            background: rgba(0, 0, 0, 0.85);
+        }
+
+        #controls-hint.hidden {
+            display: none;
+            opacity: 0;
             pointer-events: none;
+        }
+
+        .close-hint {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #aaa;
+            font-weight: bold;
         }
 
         #emoji-container {
@@ -309,8 +335,9 @@
                 </div>
             </div>
 
-            <div id="controls-hint">
-                📱 Tap to move • 🎁 Press button to drop presents
+            <div id="controls-hint" title="Tap to close">
+                📱 Tap to move • 🎁 Drop presents
+                <span class="close-hint">&times;</span>
             </div>
 
             <button id="present-button">🎁</button>
@@ -1061,6 +1088,8 @@
 
             // Reset Santa position
             game.santa.x = 300;
+            // Show hint again on new game (optional, but helperful for new players)
+            document.getElementById('controls-hint').classList.remove('hidden');
             game.santa.y = 200;
             game.santa.vx = 0;
             game.santa.vy = 0;
@@ -1092,6 +1121,11 @@
         });
 
         document.getElementById('restart-btn').addEventListener('click', startGame);
+
+        // Close hint on click
+        document.getElementById('controls-hint').addEventListener('click', function () {
+            this.classList.add('hidden');
+        });
 
         // Start game loop
         gameLoop();

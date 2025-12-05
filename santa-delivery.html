@@ -427,14 +427,14 @@
         // Generate houses with chimneys
         function generateHouses() {
             townMap.houses = [];
-            const attempts = 100;
-            const houseCount = 10;
+            const maxAttempts = 200; // Increased attempts
+            const targetHouseCount = 10;
 
-            for (let i = 0; i < houseCount; i++) {
+            for (let i = 0; i < targetHouseCount; i++) {
                 let safe = false;
                 let x, y;
 
-                for (let j = 0; j < attempts; j++) {
+                for (let j = 0; j < maxAttempts; j++) {
                     // Keep margin from edges (100px)
                     x = 100 + Math.random() * (townMap.width - 320);
                     y = 100 + Math.random() * (townMap.height - 300);
@@ -466,7 +466,10 @@
                     });
                 }
             }
+            // IMPORTANT: Sync totalHouses with what was actually generated
+            game.totalHouses = townMap.houses.length;
         }
+
 
         // Initial generation
         generateHouses();
@@ -1049,6 +1052,10 @@
 
             // Reset all houses
             generateHouses(); // Regenerate positions for new game
+
+            // Update progress with new total
+            updateProgress();
+
             game.deliveredHouses.clear(); // Clear delivered set after regeneration
             // Note: tree positions remain static per session but could be randomized too if desired
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,13 +17,15 @@
             -webkit-user-select: none;
         }
 
-        body, html {
+        body,
+        html {
             width: 100%;
             height: 100%;
             overflow: hidden;
             touch-action: none;
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', sans-serif;
             background: #0a1628;
+            /* Update background to be sticky or fixed if needed, but standard fill is fine */
         }
 
         #game-container {
@@ -120,8 +123,15 @@
         }
 
         @keyframes pulse-button {
-            0%, 100% { transform: translateX(-50%) scale(1); }
-            50% { transform: translateX(-50%) scale(1.15); }
+
+            0%,
+            100% {
+                transform: translateX(-50%) scale(1);
+            }
+
+            50% {
+                transform: translateX(-50%) scale(1.15);
+            }
         }
 
         #controls-hint {
@@ -160,6 +170,7 @@
                 opacity: 1;
                 transform: translate(0, 0) rotate(0deg);
             }
+
             100% {
                 opacity: 0;
                 transform: translate(var(--fall-x), 200px) rotate(360deg);
@@ -178,10 +189,12 @@
                 opacity: 1;
                 transform: translate(0, 0) scale(0.5);
             }
+
             50% {
                 opacity: 1;
                 transform: translate(var(--tx), var(--ty)) scale(1.3);
             }
+
             100% {
                 opacity: 0;
                 transform: translate(calc(var(--tx) * 1.5), calc(var(--ty) * 1.5)) scale(1);
@@ -201,6 +214,7 @@
             0% {
                 transform: translateY(-20px) translateX(0);
             }
+
             100% {
                 transform: translateY(100vh) translateX(var(--drift));
             }
@@ -265,10 +279,12 @@
             .screen h1 {
                 font-size: 36px;
             }
+
             button {
                 font-size: 24px;
                 padding: 15px 36px;
             }
+
             #present-button {
                 width: 80px;
                 height: 80px;
@@ -277,6 +293,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="game-container">
         <canvas id="canvas"></canvas>
@@ -308,13 +325,24 @@
             <p>Help Santa deliver presents to all the houses!</p>
             <p>Fly over the snowy town and press the 🎁 button<br>when you're above a house to deliver presents!</p>
             <button id="start-btn">START DELIVERING</button>
-            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap the screen to fly around • Press 🎁 to drop presents</p>
+            <p style="font-size: 14px; margin-top: 20px; color: #aaa;">Tap the screen to fly around • Press 🎁 to drop
+                presents</p>
             <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
-                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
-                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
-                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
-                <a href="christmas-tree.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎄 Tree Decorator</a>
+                <a href="index.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️
+                    Magic Typing</a>
+                <a href="drive.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗
+                    Drive Game</a>
+                <a href="racer.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️
+                    Racer Game</a>
+                <a href="town-racer.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️
+                    Town Adventure</a>
+                <a href="christmas-tree.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎄
+                    Tree Decorator</a>
             </div>
         </div>
 
@@ -326,11 +354,21 @@
             <p id="time-display"></p>
             <button id="restart-btn">DELIVER AGAIN</button>
             <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <a href="index.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️ Magic Typing</a>
-                <a href="drive.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗 Drive Game</a>
-                <a href="racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️ Racer Game</a>
-                <a href="town-racer.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️ Town Adventure</a>
-                <a href="christmas-tree.html" style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎄 Tree Decorator</a>
+                <a href="index.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">⌨️
+                    Magic Typing</a>
+                <a href="drive.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🚗
+                    Drive Game</a>
+                <a href="racer.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏎️
+                    Racer Game</a>
+                <a href="town-racer.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🏙️
+                    Town Adventure</a>
+                <a href="christmas-tree.html"
+                    style="color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 10px; font-size: 14px;">🎄
+                    Tree Decorator</a>
             </div>
         </div>
     </div>
@@ -631,14 +669,16 @@
             game.santa.x += game.santa.vx;
             game.santa.y += game.santa.vy;
 
-            game.santa.x = Math.max(60, Math.min(townMap.width - 60, game.santa.x));
-            game.santa.y = Math.max(60, Math.min(townMap.height - 60, game.santa.y));
+            // Remove hard clamping to map for infinite freedom
+            // game.santa.x = Math.max(60, Math.min(townMap.width - 60, game.santa.x));
+            // game.santa.y = Math.max(60, Math.min(townMap.height - 60, game.santa.y));
 
             game.camera.x = game.santa.x - canvas.width / 2;
             game.camera.y = game.santa.y - canvas.height / 2;
 
-            game.camera.x = Math.max(0, Math.min(townMap.width - canvas.width, game.camera.x));
-            game.camera.y = Math.max(0, Math.min(townMap.height - canvas.height, game.camera.y));
+            // Remove camera clamping
+            // game.camera.x = Math.max(0, Math.min(townMap.width - canvas.width, game.camera.x));
+            // game.camera.y = Math.max(0, Math.min(townMap.height - canvas.height, game.camera.y));
         }
 
         // Drawing Functions
@@ -740,35 +780,184 @@
             const screenY = canvas.height / 2;
 
             ctx.translate(screenX, screenY);
-            ctx.rotate(game.santa.angle);
+            ctx.rotate(game.santa.angle); // Rotate the whole group
 
-            // Shadow
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            // --- Draw Reindeer (2 pairs) ---
+            // They need to be "in front" (to the right if angle 0 is facing right)
+            // But wait, standard angle 0 usually means right.
+            // Let's assume 'r' points right.
+
+            const reindeerColor = '#8B4513'; // SaddleBrown
+            const antlerColor = '#D2B48C'; // Tan
+
+            const drawReindeer = (rx, ry) => {
+                ctx.save();
+                ctx.translate(rx, ry);
+
+                // Body
+                ctx.fillStyle = reindeerColor;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Head
+                ctx.beginPath();
+                ctx.ellipse(12, -8, 8, 6, 0.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Legs (simple lines for motion)
+                ctx.strokeStyle = reindeerColor;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(-5, 5); ctx.lineTo(-8, 15);
+                ctx.moveTo(5, 5); ctx.lineTo(8, 15);
+                ctx.stroke();
+
+                // Antlers
+                ctx.strokeStyle = antlerColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(14, -12); ctx.lineTo(18, -20);
+                ctx.moveTo(14, -12); ctx.lineTo(10, -18);
+                ctx.stroke();
+
+                // Red Nose (Rudolph leading?)
+                if (rx > 60) { // Front reindeers
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath();
+                    ctx.arc(18, -8, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            };
+
+            // Reins
+            ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.ellipse(0, 15, 50, 20, 0, 0, Math.PI * 2);
+            ctx.moveTo(20, 0); // Sleigh front
+            ctx.lineTo(80, 0); // Reindeer connection
+            ctx.stroke();
+
+            // Draw pairs
+            drawReindeer(50, -15);
+            drawReindeer(50, 15);
+            drawReindeer(80, -15);
+            drawReindeer(80, 15);
+
+
+            // --- Draw Sleigh ---
+            // Main Body
+            ctx.fillStyle = '#C00000'; // Deep Red
+            ctx.beginPath();
+            // Complex sleigh shape: curved back, lower front
+            ctx.moveTo(-30, -20);
+            ctx.bezierCurveTo(-45, -20, -45, 20, -30, 20); // Back curve
+            ctx.lineTo(20, 20);
+            ctx.bezierCurveTo(30, 20, 30, -20, 20, -20); // Front curve
+            ctx.closePath();
             ctx.fill();
 
-            // Sleigh
-            ctx.fillStyle = '#8B0000';
-            ctx.fillRect(-30, -10, 60, 30);
-            ctx.fillStyle = '#FFD700';
-            ctx.fillRect(-30, -10, 60, 8);
+            // Trim/Detail
+            ctx.strokeStyle = '#FFD700'; // Gold
+            ctx.lineWidth = 3;
+            ctx.stroke();
 
-            // Santa emoji
-            ctx.font = '48px Arial';
-            ctx.fillText('🎅', -24, 8);
+            // Runners (Skids)
+            ctx.strokeStyle = '#C0C0C0'; // Silver/Grey
+            ctx.lineWidth = 2;
 
-            // Reindeer (in front)
-            ctx.fillText('🦌', -24, -35);
+            // Top runner rail
+            ctx.beginPath();
+            ctx.moveTo(-40, 22);
+            ctx.lineTo(30, 22);
+            ctx.stroke();
+
+            // Bottom runner rail
+            ctx.beginPath();
+            ctx.moveTo(-40, -22);
+            ctx.lineTo(30, -22);
+            ctx.stroke();
+
+            // Curved tips of runners
+            ctx.beginPath();
+            ctx.moveTo(30, 22);
+            ctx.quadraticCurveTo(40, 22, 45, 15);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(30, -22);
+            ctx.quadraticCurveTo(40, -22, 45, -15);
+            ctx.stroke();
+
+
+            // --- Draw Santa ---
+            // Santa sits in the middle/back
+            ctx.save();
+            ctx.translate(-5, 0);
+
+            // Body
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Beard
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(4, 0, 8, 0, Math.PI * 2); // Beard is offset towards front
+            ctx.fill();
+
+            // Hat
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.moveTo(-2, -8);
+            ctx.lineTo(8, -2);
+            ctx.lineTo(-2, 8);
+            ctx.fill();
+
+            // Hat Pompom
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(-2, 8, 3, 0, Math.PI * 2);
+            ctx.fill();
 
             ctx.restore();
 
-            // Santa's trail
+
+            // Bag of toys
+            ctx.fillStyle = '#8B4513';
+            ctx.beginPath();
+            ctx.arc(-25, 0, 10, 0, Math.PI * 2);
+            ctx.fill();
+
+
+            ctx.restore();
+
+            // Santa's trail (Particle effect moved outside of rotate to trail behind correctly in world space?)
+            // Actually, trail logic is world space based usually.
+            // The existing trail code was:
+            // if (Math.random() < 0.3) {
+            //      ctx.save();
+            //      ctx.translate(-game.camera.x, -game.camera.y);
+            //      ...
+            // }
+            // That part is fine, but let's make it more magical.
+
             if (Math.random() < 0.3) {
+                const trailX = game.santa.x - Math.cos(game.santa.angle) * 40;
+                const trailY = game.santa.y - Math.sin(game.santa.angle) * 40;
+
                 ctx.save();
                 ctx.translate(-game.camera.x, -game.camera.y);
-                ctx.font = '20px Arial';
-                ctx.fillText('✨', game.santa.x + (Math.random() - 0.5) * 40, game.santa.y + (Math.random() - 0.5) * 40);
+                ctx.fillStyle = `hsla(${Math.random() * 60 + 30}, 100%, 50%, 0.8)`;
+                ctx.font = '12px Arial';
+                ctx.fillText('✨', trailX + (Math.random() - 0.5) * 20, trailY + (Math.random() - 0.5) * 20);
+                // Also add some small circles
+                ctx.beginPath();
+                ctx.arc(trailX + (Math.random() - 0.5) * 10, trailY + (Math.random() - 0.5) * 10, Math.random() * 3, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.restore();
             }
         }
@@ -870,4 +1059,5 @@
         createSnowfall();
     </script>
 </body>
+
 </html>

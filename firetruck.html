@@ -266,6 +266,88 @@
         .nav-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
+
+        /* Styles for Hamburger Menu */
+        #game-nav {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2000;
+        }
+
+        #nav-toggle {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #nav-toggle:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        #nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 2001;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #nav-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #nav-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 10px 30px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
@@ -274,8 +356,24 @@
         <canvas id="canvas"></canvas>
 
         <div id="ui-overlay">
-            <div id="nav-menu">
-                <a href="index.html" class="nav-btn">⬅ Menu</a>
+            <!-- Hamburger Menu -->
+            <div id="game-nav">
+                <button id="nav-toggle">☰</button>
+            </div>
+
+            <div id="nav-overlay" class="hidden">
+                <button id="nav-close">✕</button>
+                <div class="nav-links">
+                    <a href="index.html">🏠 Home</a>
+                    <a href="firetruck.html">🚒 Fire Truck</a>
+                    <a href="excavator.html">🚜 Excavator</a>
+                    <a href="submarine.html">🌊 Submarine</a>
+                    <a href="drive.html">🚗 Drive Game</a>
+                    <a href="racer.html">🏎️ Racer Game</a>
+                    <a href="town-racer.html">🏙️ Town Adventure</a>
+                    <a href="santa-delivery.html">🎅 Santa Delivery</a>
+                    <a href="christmas-tree.html">🎄 Tree Decorator</a>
+                </div>
             </div>
 
             <div id="mission-panel">
@@ -354,7 +452,9 @@
 
         const config = {
             gravity: 0.4,
-            waterSpeed: 15,
+            baseWaterSpeed: 15,
+            maxWaterSpeed: 28, // High enough to reach top of screen
+            rampingRate: 0.5,
             fireResistance: 2,
             driveDistance: 4000
         };
@@ -372,13 +472,14 @@
             steamParticles: [],
             fireParticles: [],
             hoseAngle: -Math.PI / 4,
-            isSpraying: false
+            isSpraying: false,
+            currentWaterSpeed: config.baseWaterSpeed
         };
 
         const input = {
             left: false,
             right: false,
-            aimX: 0, // For mobile touch aim
+            aimX: 0,
             aimY: 0,
             mouse: { x: 0, y: 0, down: false }
         };
@@ -429,7 +530,7 @@
         // Touch Controls (Buttons)
         const btnLeft = document.getElementById('btn-left');
         const btnRight = document.getElementById('btn-right');
-        const btnSpray = document.getElementById('spray-btn'); // Currently hidden in Rescue
+        // const btnSpray = document.getElementById('spray-btn'); // Currently hidden in Rescue
 
         const addTouch = (el, key) => {
             el.addEventListener('touchstart', (e) => { e.preventDefault(); input[key] = true; el.classList.add('active'); });
@@ -458,6 +559,7 @@
             state.waterParticles = [];
             state.steamParticles = [];
             state.fireParticles = [];
+            state.currentWaterSpeed = config.baseWaterSpeed;
 
             // Generate Fire based on Level
             generateLevelFire();
@@ -494,7 +596,7 @@
                 startX = canvas.width - 100 - (cols * 40);
             } else {
                 // Infinite
-                rows = 10 + Math.floor(Math.random() * 5);
+                rows = 12 + Math.floor(Math.random() * 8); // Can get very tall
                 cols = 10 + Math.floor(Math.random() * 10);
                 startX = canvas.width - 50 - (cols * 40);
             }
@@ -582,22 +684,31 @@
 
             const dx = input.mouse.x - pivotX;
             const dy = input.mouse.y - pivotY;
-            state.hoseAngle = Math.atan2(dy, dx);
 
-            state.hoseAngle = Math.max(-Math.PI / 1.5, Math.min(0, state.hoseAngle));
+            // Allow aiming higher/backwards slightly
+            state.hoseAngle = Math.atan2(dy, dx);
+            state.hoseAngle = Math.max(-Math.PI * 0.9, Math.min(0, state.hoseAngle));
 
             if (state.isSpraying) {
+                // Ramp up pressure
+                state.currentWaterSpeed += config.rampingRate;
+                if (state.currentWaterSpeed > config.maxWaterSpeed) state.currentWaterSpeed = config.maxWaterSpeed;
+
                 for (let i = 0; i < 3; i++) {
-                    const speed = config.waterSpeed + (Math.random() - 0.5) * 2;
+                    const speed = state.currentWaterSpeed + (Math.random() - 0.5) * 2;
                     const spread = (Math.random() - 0.5) * 0.1;
                     state.waterParticles.push({
                         x: pivotX + Math.cos(state.hoseAngle) * 40,
                         y: pivotY + Math.sin(state.hoseAngle) * 40,
                         vx: Math.cos(state.hoseAngle + spread) * speed,
                         vy: Math.sin(state.hoseAngle + spread) * speed,
-                        life: 100
+                        life: 120 // Live longer for longer shots
                     });
                 }
+            } else {
+                // Reset pressure when not spraying
+                // Or decay it? Reset feels snappier.
+                state.currentWaterSpeed = config.baseWaterSpeed;
             }
 
             if (state.fireParticles.length === 0) {
@@ -749,6 +860,14 @@
                 ctx.fillRect(0, -5, 40, 10);
                 ctx.fillStyle = '#666';
                 ctx.fillRect(35, -7, 10, 14);
+
+                // Draw water buildup indicator?
+                if (state.isSpraying && state.currentWaterSpeed > config.baseWaterSpeed) {
+                    const power = (state.currentWaterSpeed - config.baseWaterSpeed) / (config.maxWaterSpeed - config.baseWaterSpeed);
+                    ctx.fillStyle = `rgba(0, 191, 255, ${power})`;
+                    ctx.beginPath(); ctx.arc(45, 0, 5 + power * 5, 0, Math.PI * 2); ctx.fill();
+                }
+
                 ctx.restore();
             }
 
@@ -804,14 +923,14 @@
             const hint = document.getElementById('controls-hint');
             if (newState === GAME_STATES.DRIVING) {
                 document.getElementById('mission-panel').classList.add('driving');
-                document.getElementById('spray-btn').style.display = 'none';
+                // document.getElementById('spray-btn').style.display = 'none';
                 document.getElementById('move-controls').style.display = 'flex';
                 document.getElementById('btn-left').textContent = '⬅';
                 document.getElementById('btn-right').textContent = '➡';
                 hint.innerHTML = "💻 Arrows to Drive • Get to the fire!";
             } else if (newState === GAME_STATES.RESCUE) {
                 document.getElementById('mission-panel').classList.remove('driving');
-                document.getElementById('spray-btn').style.display = 'none'; // Hidden, touch screen to spray
+                // document.getElementById('spray-btn').style.display = 'none'; // Hidden, touch screen to spray
                 document.getElementById('move-controls').style.display = 'flex';
                 document.getElementById('btn-left').textContent = '⬅';
                 document.getElementById('btn-right').textContent = '➡';
@@ -819,6 +938,22 @@
                 hint.innerHTML = "🎯 Touch Screen to Aim & Spray • 💻 Arrows to Move Truck";
             }
         }
+
+        // Menu Logic
+        const navToggle = document.getElementById('nav-toggle');
+        const navOverlay = document.getElementById('nav-overlay');
+        const navClose = document.getElementById('nav-close');
+
+        if (navToggle && navOverlay && navClose) {
+            navToggle.addEventListener('click', () => {
+                navOverlay.classList.remove('hidden');
+            });
+
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.add('hidden');
+            });
+        }
+
 
         // Listeners
         document.getElementById('start-btn').addEventListener('click', () => initGame(true));
@@ -876,3 +1011,4 @@
 </body>
 
 </html>
+```

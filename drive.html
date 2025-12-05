@@ -18,6 +18,88 @@
             -webkit-user-select: none;
         }
 
+        /* Styles for Hamburger Menu */
+        #game-nav {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2000;
+        }
+
+        #nav-toggle {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #nav-toggle:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        #nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 30, 0.95);
+            z-index: 2001;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #nav-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #nav-close {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 10px 30px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #000;
@@ -333,7 +415,8 @@
     <!-- Game UI -->
     <div id="game-ui" class="ui-layer">
         <div class="top-bar">
-            <button class="back-btn" onclick="showMenu()">⬅ Menu</button>
+            <!-- Back button removed in favor of hamburger -->
+            <button class="back-btn" onclick="showMenu()" style="opacity:0; pointer-events:none;">&nbsp;</button>
             <div class="counter" id="score-display">0 / 5</div>
         </div>
         <div class="number-bar" id="number-bar">
@@ -356,6 +439,29 @@
         <div class="countdown-container">
             <h2 style="font-size: 2rem; margin-bottom: 20px;">Tap to Launch!</h2>
             <div id="countdown-display" class="countdown-num">10</div>
+        </div>
+    </div>
+
+    <!-- Hamburger Menu -->
+    <div id="ui-overlay"
+        style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1000; pointer-events: none;">
+        <div id="game-nav" style="pointer-events: auto;">
+            <button id="nav-toggle">☰</button>
+        </div>
+
+        <div id="nav-overlay" class="hidden">
+            <button id="nav-close">✕</button>
+            <div class="nav-links">
+                <a href="index.html">🏠 Home</a>
+                <a href="firetruck.html">🚒 Fire Truck</a>
+                <a href="excavator.html">🚜 Excavator</a>
+                <a href="submarine.html">🌊 Submarine</a>
+                <a href="drive.html">🚗 Drive Game</a>
+                <a href="racer.html">🏎️ Racer Game</a>
+                <a href="town-racer.html">🏙️ Town Adventure</a>
+                <a href="santa-delivery.html">🎅 Santa Delivery</a>
+                <a href="christmas-tree.html">🎄 Tree Decorator</a>
+            </div>
         </div>
     </div>
 
@@ -1021,6 +1127,19 @@
         function loop() { draw(); requestAnimationFrame(loop); }
         loop();
 
+        // Menu Logic
+        const navToggle = document.getElementById('nav-toggle');
+        const navOverlay = document.getElementById('nav-overlay');
+        const navClose = document.getElementById('nav-close');
+
+        if (navToggle && navOverlay && navClose) {
+            navToggle.addEventListener('click', () => {
+                navOverlay.classList.remove('hidden');
+            });
+            navClose.addEventListener('click', () => {
+                navOverlay.classList.add('hidden');
+            });
+        }
     </script>
 </body>
 

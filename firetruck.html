@@ -487,8 +487,8 @@
 
         function updateRescue(dt) {
             // Aiming Hose
-            // Pivot point
-            const pivotX = state.truckX + 120;
+            // Pivot point matches the drawn truck position in Rescue mode
+            const pivotX = (canvas.width - 550) + 120;
             const pivotY = canvas.height - 110;
 
             // If using mouse, look at mouse. If touch, auto-sweep or simple up/down?
@@ -652,9 +652,8 @@
                 // visual bobbing
                 drawX = 100; // Fixed on screen while world moves
             } else {
-                // In arrived/rescue, we draw it relative to the world or fixed?
-                // Let's say in Rescue it is parked on left side.
-                drawX = 100;
+                // Move close to fire!
+                drawX = canvas.width - 550;
             }
 
             const groundY = canvas.height - 50;

@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Snowball Throw</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #87CEEB;
+            /* Sky Blue */
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Hamburger Menu (Top Left) */
+        #game-nav {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: auto;
+            z-index: 100;
+        }
+
+        #nav-toggle {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #nav-toggle:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* HUD */
+        #hud-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+        }
+
+        .hud-panel {
+            background: rgba(255, 255, 255, 0.85);
+            border: 3px solid #FFD700;
+            border-radius: 15px;
+            padding: 10px 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        #level-display {
+            font-size: 1.2rem;
+        }
+
+        #score-display {
+            font-size: 1.1rem;
+        }
+
+        #snowmen-count {
+            font-size: 1.5rem;
+            color: #d63031;
+        }
+
+        /* Screens */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s;
+        }
+
+        .screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #fff;
+            text-shadow: 0 0 10px #FFD700, 2px 2px 0 #0056b3;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            border: 3px solid #FFD700;
+            border-radius: 30px;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn:hover {
+            filter: brightness(1.1);
+        }
+
+        /* Nav Overlay */
+        #nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 30, 50, 0.95);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        #nav-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .nav-links a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            font-size: 1.5rem;
+            margin: 15px;
+            padding: 10px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-container">
+        <canvas id="canvas"></canvas>
+
+        <!-- Background Decoration specific to game -->
+        <!-- (Canvas will handle most, but could put DOM elements here) -->
+
+        <div id="ui-layer">
+            <!-- HUD when playing -->
+            <div id="hud-container">
+                <!-- Left: Menu handled by abs pos element below, so maybe just Level info -->
+                <div style="width: 50px;"></div> <!-- Spacer for hamburger -->
+
+                <div class="hud-panel">
+                    <div id="level-display">Level 1</div>
+                </div>
+
+                <div class="hud-panel">
+                    <div>Snowmen Remaining</div>
+                    <div id="snowmen-count">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hamburger Menu Button -->
+        <div id="game-nav">
+            <button id="nav-toggle">☰</button>
+        </div>
+
+        <!-- Navigation Overlay -->
+        <div id="nav-overlay">
+            <button id="nav-close"
+                style="position:absolute; top:30px; right:30px; background:none; border:none; color:white; font-size:40px; cursor:pointer;">✕</button>
+            <div class="nav-links">
+                <a href="index.html">🏠 Home</a>
+                <a href="snowball-throw.html">❄️ Snowball Throw</a>
+                <a href="santa-delivery.html">🎅 Santa Delivery</a>
+                <a href="town-racer.html">🏙️ Town Adventure</a>
+            </div>
+        </div>
+
+        <!-- Start / Menu Screen -->
+        <div id="menu-screen" class="screen">
+            <h1>❄️ Snowball Throw ❄️</h1>
+            <p style="color:white; font-size: 1.2rem; margin-bottom: 2rem;">Knock down all the snowmen!</p>
+            <button class="btn" onclick="game.startLevel(1)">Play Level 1</button>
+            <div id="level-select"
+                style="margin-top: 20px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen hidden">
+            <h1>🎉 Level Complete! 🎉</h1>
+            <p style="color:#FFD700; font-size: 2rem;">Amazing Throwing!</p>
+            <button class="btn" id="next-level-btn">Next Level ➡</button>
+            <button class="btn" onclick="game.showMenu()">Main Menu</button>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+        /**
+ * Snowball Throw Game
+ * 
+ * Game Loop, Physics, Entities, and Logic
+ */
+
+        class Physics {
+            static gravity = 0.5;
+            static friction = 0.99;
+            static groundY = 0; // Set in resize
+        }
+
+        class Particle {
+            constructor(x, y, color, speed, size) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.size = size || Math.random() * 3 + 2;
+                const angle = Math.random() * Math.PI * 2;
+                const speedVal = Math.random() * speed;
+                this.vx = Math.cos(angle) * speedVal;
+                this.vy = Math.sin(angle) * speedVal - 1; // Slight upward bias
+                this.life = 1.0;
+                this.decay = 0.02 + Math.random() * 0.03;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // Gravity
+                this.life -= this.decay;
+            }
+
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Snowball {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.radius = 8;
+                this.active = true;
+                this.history = []; // For trail effect
+            }
+
+            update() {
+                if (!this.active) return;
+
+                this.history.push({ x: this.x, y: this.y });
+                if (this.history.length > 8) this.history.shift();
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += Physics.gravity;
+
+                // Ground collision
+                if (this.y > Physics.groundY - this.radius) {
+                    this.y = Physics.groundY - this.radius;
+                    // Spawn snow splash
+                    game.spawnParticles(this.x, this.y, '#FFF', 3, 5);
+                    this.active = false; // Destroy on ground hit for now
+                }
+
+                // Boundaries
+                if (this.x > game.width + 50 || this.x < -50) this.active = false;
+            }
+
+            draw(ctx) {
+                // Trail
+                if (this.history.length > 1) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                    ctx.lineWidth = this.radius;
+                    ctx.lineCap = 'round';
+                    this.history.forEach((pos, i) => {
+                        if (i === 0) ctx.moveTo(pos.x, pos.y);
+                        else ctx.lineTo(pos.x, pos.y);
+                    });
+                    ctx.stroke();
+                }
+
+                // Ball
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.strokeStyle = '#DDD';
+                ctx.stroke();
+            }
+        }
+
+        class Snowman {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y; // Bottom center position
+                this.active = true;
+                this.shakeTimer = 0;
+
+                // Snowman parts (stacked from bottom to top)
+                this.parts = [
+                    { id: 'base', r: 35, yOffset: -35, health: 1, color: '#FFF' },
+                    { id: 'body', r: 25, yOffset: -85, health: 1, color: '#FFF' },
+                    { id: 'head', r: 18, yOffset: -123, health: 1, color: '#FFF' }
+                ];
+            }
+
+            hit(partId) {
+                const part = this.parts.find(p => p.id === partId);
+                if (part && part.health > 0) {
+                    part.health--;
+                    this.shakeTimer = 15;
+                    // Visual flare or particle for hit
+                    game.spawnParticles(this.x, this.y + part.yOffset, '#FFF', 5, 8);
+
+                    // If base is destroyed, whole snowman falls? 
+                    // Simplified: parts just disappear.
+                    if (partId === 'base') {
+                        // Destroy upper parts too if base creates Chain Reaction
+                        // For now, let's play nice and just destroy the part.
+                    }
+                }
+                this.checkStatus();
+            }
+
+            checkStatus() {
+                // Active if any part has health
+                this.active = this.parts.some(p => p.health > 0);
+            }
+
+            draw(ctx) {
+                if (!this.active) return;
+
+                let shakeX = 0;
+                if (this.shakeTimer > 0) {
+                    shakeX = (Math.random() - 0.5) * 6;
+                    this.shakeTimer--;
+                }
+
+                const drawX = this.x + shakeX;
+
+                this.parts.forEach(part => {
+                    if (part.health <= 0) return;
+
+                    const partY = this.y + part.yOffset;
+
+                    // Body Part
+                    ctx.beginPath();
+                    ctx.arc(drawX, partY, part.r, 0, Math.PI * 2);
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowOffsetX = 3;
+                    ctx.shadowOffsetY = 3;
+                    ctx.fill();
+                    ctx.shadowColor = 'transparent';
+
+                    // Decoration
+                    if (part.id === 'head') {
+                        // Eyes
+                        ctx.fillStyle = '#333';
+                        ctx.beginPath();
+                        ctx.arc(drawX - 7, partY - 5, 3, 0, Math.PI * 2);
+                        ctx.arc(drawX + 7, partY - 5, 3, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // Nose
+                        ctx.fillStyle = 'orange';
+                        ctx.beginPath();
+                        ctx.moveTo(drawX, partY + 2);
+                        ctx.lineTo(drawX + 15, partY + 6);
+                        ctx.lineTo(drawX, partY + 10);
+                        ctx.fill();
+                    } else if (part.id === 'body') {
+                        // Buttons
+                        ctx.fillStyle = '#333';
+                        ctx.beginPath();
+                        ctx.arc(drawX, partY - 10, 3, 0, Math.PI * 2);
+                        ctx.arc(drawX, partY, 3, 0, Math.PI * 2);
+                        ctx.arc(drawX, partY + 10, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            checkCollision(snowball) {
+                if (!this.active || !snowball.active) return false;
+
+                for (let part of this.parts) {
+                    if (part.health <= 0) continue;
+                    const partY = this.y + part.yOffset;
+                    const dist = Math.hypot(snowball.x - this.x, snowball.y - partY);
+
+                    if (dist < part.r + snowball.radius) {
+                        this.hit(part.id);
+                        snowball.active = false;
+                        game.spawnParticles(snowball.x, snowball.y, '#FFF', 2, 5); // Snowball explode
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
+        // Level Configurations
+        const LEVELS = [
+            [], // Level 0 unused
+            [{ x: 400 }, { x: 500 }, { x: 600 }], // Level 1: Close group
+            [{ x: 350 }, { x: 550 }, { x: 750 }], // Level 2: Spread out
+            [{ x: 400 }, { x: 450 }, { x: 500 }, { x: 550 }, { x: 600 }], // Level 3: Line
+            [{ x: 600 }, { x: 700 }, { x: 800 }, { x: 900 }], // Level 4: Far
+            [{ x: 300 }, { x: 800 }, { x: 350 }, { x: 750 }], // Level 5: Split
+            [{ x: 400 }, { x: 500 }, { x: 600 }, { x: 700 }, { x: 800 }, { x: 900 }], // Level 6
+            [{ x: 350 }, { x: 450 }, { x: 650 }, { x: 750 }, { x: 950 }], // Level 7
+            [{ x: 500 }, { x: 600 }, { x: 700 }, { x: 800 }, { x: 900 }, { x: 1000 }], // Level 8
+            [{ x: 300 }, { x: 400 }, { x: 500 }, { x: 800 }, { x: 900 }, { x: 1000 }], // Level 9
+            [{ x: 400 }, { x: 500 }, { x: 600 }, { x: 700 }, { x: 800 }, { x: 900 }, { x: 1000 }, { x: 1100 }] // Level 10
+        ];
+
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+
+                this.state = 'MENU'; // MENU, PLAYING, GAMEOVER
+                this.level = 1;
+                this.snowballs = [];
+                this.particles = [];
+                this.snowmen = [];
+                this.snowmenRemaining = 0;
+
+                // Input
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.isMouseDown = false;
+
+                this.init();
+            }
+
+            init() {
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+
+                // Input Listeners
+                this.canvas.addEventListener('mousemove', e => this.handleMouseMove(e));
+                this.canvas.addEventListener('mousedown', e => this.handleMouseDown(e));
+                this.canvas.addEventListener('mouseup', e => this.handleMouseUp(e));
+
+                this.canvas.addEventListener('touchstart', e => this.handleTouch(e), { passive: false });
+                this.canvas.addEventListener('touchmove', e => this.handleTouch(e), { passive: false });
+                this.canvas.addEventListener('touchend', e => this.handleTouchEnd(e), { passive: false });
+
+                // Navigation
+                document.getElementById('nav-toggle').onclick = () => {
+                    document.getElementById('nav-overlay').classList.add('visible');
+                };
+                document.getElementById('nav-close').onclick = () => {
+                    document.getElementById('nav-overlay').classList.remove('visible');
+                };
+
+                // Next Level Button
+                document.getElementById('next-level-btn').onclick = () => {
+                    this.startLevel(this.level + 1);
+                };
+
+                // Generate Level Buttons
+                const lvlContainer = document.getElementById('level-select');
+                for (let i = 1; i <= 10; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.style.padding = '10px 20px';
+                    btn.style.fontSize = '1.2rem';
+                    btn.textContent = i;
+                    btn.onclick = () => this.startLevel(i);
+                    lvlContainer.appendChild(btn);
+                }
+
+                // Add Free Play Button
+                const freePlayBtn = document.createElement('button');
+                freePlayBtn.className = 'btn';
+                freePlayBtn.style.background = 'linear-gradient(180deg, #ff9a9e 0%, #fecfef 100%)';
+                freePlayBtn.textContent = '🎲 Free Play';
+                freePlayBtn.style.gridColumn = '1 / -1';
+                freePlayBtn.onclick = () => this.startLevel('FREE');
+                lvlContainer.appendChild(freePlayBtn);
+
+                this.startSnowfall();
+                this.loop();
+            }
+
+            startSnowfall() {
+                // Create CSS snow
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                container.style.pointerEvents = 'none';
+                container.style.zIndex = '1';
+                document.body.appendChild(container);
+
+                for (let i = 0; i < 50; i++) {
+                    const flake = document.createElement('div');
+                    flake.innerHTML = '❄';
+                    flake.style.position = 'absolute';
+                    flake.style.color = 'white';
+                    flake.style.opacity = Math.random() * 0.5 + 0.3;
+                    flake.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                    flake.style.left = Math.random() * 100 + 'vw';
+
+                    const duration = Math.random() * 5 + 5;
+                    flake.style.animation = `fall ${duration}s linear infinite`;
+                    flake.style.animationDelay = -Math.random() * duration + 's';
+
+                    container.appendChild(flake);
+                }
+
+                // Add keyframes
+                const style = document.createElement('style');
+                style.innerHTML = `
+            @keyframes fall {
+                0% { transform: translateY(-5vh) translateX(0); }
+                100% { transform: translateY(105vh) translateX(20px); }
+            }
+            @keyframes victory-pop {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.2); opacity: 1; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+        `;
+                document.head.appendChild(style);
+            }
+
+            resize() {
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+                Physics.groundY = this.height - 50;
+            }
+
+            startLevel(lvl) {
+                if (typeof lvl === 'number' && lvl > 10) lvl = 1;
+
+                this.level = lvl;
+                this.state = 'PLAYING';
+                this.snowballs = [];
+                this.particles = [];
+                this.snowmen = [];
+
+                // Remove old emoji rain if exists
+                const rain = document.getElementById('emoji-rain');
+                if (rain) rain.remove();
+
+                if (lvl === 'FREE') {
+                    // Free Play: Generate random snowmen
+                    for (let i = 0; i < 5; i++) {
+                        const x = 300 + Math.random() * (this.width - 350);
+                        this.snowmen.push(new Snowman(x, Physics.groundY));
+                    }
+                    document.getElementById('level-display').textContent = `Free Play`;
+                } else {
+                    // Handcrafted Levels
+                    const layout = LEVELS[lvl];
+                    layout.forEach(pos => {
+                        // Scale x position relative to screen width if needed, or just use raw pixels
+                        // Minimal responsive adjustment:
+                        let x = pos.x;
+                        if (this.width < 800) x = pos.x * 0.8;
+                        this.snowmen.push(new Snowman(x, Physics.groundY));
+                    });
+                    document.getElementById('level-display').textContent = `Level ${lvl}`;
+                }
+
+                this.snowmenRemaining = this.snowmen.length;
+                this.updateHUD();
+
+                document.getElementById('menu-screen').classList.add('hidden');
+                document.getElementById('victory-screen').classList.add('hidden');
+            }
+
+            showMenu() {
+                this.state = 'MENU';
+                document.getElementById('menu-screen').classList.remove('hidden');
+                document.getElementById('victory-screen').classList.add('hidden');
+            }
+
+            updateHUD() {
+                // Count active snowmen
+                const active = this.snowmen.filter(s => s.active).length;
+                document.getElementById('snowmen-count').textContent = active;
+
+                if (active === 0 && this.state === 'PLAYING') {
+                    if (this.level === 'FREE') {
+                        // Respawn in Free Play
+                        setTimeout(() => {
+                            const x = 300 + Math.random() * (this.width - 350);
+                            this.snowmen.push(new Snowman(x, Physics.groundY));
+                            this.updateHUD();
+                        }, 1000);
+                    } else {
+                        this.handleVictory();
+                    }
+                }
+            }
+
+            handleVictory() {
+                this.state = 'VICTORY';
+                this.triggerEmojiRain();
+                setTimeout(() => {
+                    document.getElementById('victory-screen').classList.remove('hidden');
+                }, 1000);
+            }
+
+            triggerEmojiRain() {
+                const container = document.createElement('div');
+                container.id = 'emoji-rain';
+                container.style.position = 'fixed';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100%';
+                container.style.height = '100%';
+                container.style.pointerEvents = 'none';
+                container.style.zIndex = '200';
+                document.body.appendChild(container);
+
+                const emojis = ['❄️', '☃️', '🎄', '🎁', '✨', '🎉'];
+
+                for (let i = 0; i < 50; i++) {
+                    const el = document.createElement('div');
+                    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    el.style.position = 'absolute';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.top = -50 + 'px';
+                    el.style.fontSize = (Math.random() * 30 + 20) + 'px';
+                    el.style.animation = `fall ${Math.random() * 2 + 1}s linear forwards`;
+                    container.appendChild(el);
+                }
+            }
+
+            spawnParticles(x, y, color, speed, count) {
+                for (let i = 0; i < count; i++) {
+                    this.particles.push(new Particle(x, y, color, speed));
+                }
+            }
+
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouseX = e.clientX - rect.left;
+                this.mouseY = e.clientY - rect.top;
+            }
+
+            handleMouseDown(e) {
+                if (this.state !== 'PLAYING') return;
+                this.isMouseDown = true;
+            }
+
+            handleMouseUp(e) {
+                if (this.state !== 'PLAYING') return;
+                this.isMouseDown = false;
+                this.throwSnowball();
+            }
+
+            handleTouch(e) {
+                if (e.cancelable) e.preventDefault();
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouseX = touch.clientX - rect.left;
+                this.mouseY = touch.clientY - rect.top;
+                if (e.type === 'touchstart') this.isMouseDown = true;
+            }
+
+            handleTouchEnd(e) {
+                if (e.cancelable) e.preventDefault();
+                this.isMouseDown = false;
+                if (this.state === 'PLAYING') this.throwSnowball();
+            }
+
+            throwSnowball() {
+                const startX = 100;
+                const startY = this.height - 120; // Slightly higher than snowfort
+
+                // Aiming
+                const dx = this.mouseX - startX;
+                const dy = this.mouseY - startY;
+
+                // Power scaling
+                const POWER_SCALE = 0.04;
+                const MAX_POWER = 25;
+
+                let power = Math.sqrt(dx * dx + dy * dy) * POWER_SCALE;
+                power = Math.min(power, MAX_POWER);
+
+                const angle = Math.atan2(dy, dx);
+
+                const vx = Math.cos(angle) * power;
+                const vy = Math.sin(angle) * power;
+
+                this.snowballs.push(new Snowball(startX, startY, vx, vy));
+            }
+
+            drawEnvironment() {
+                // Sky
+                const grad = this.ctx.createLinearGradient(0, 0, 0, this.height);
+                grad.addColorStop(0, '#87CEEB');
+                grad.addColorStop(1, '#E0F7FA');
+                this.ctx.fillStyle = grad;
+                this.ctx.fillRect(0, 0, this.width, this.height);
+
+                // Ground
+                this.ctx.fillStyle = '#F0F8FF';
+                this.ctx.fillRect(0, Physics.groundY, this.width, this.height - Physics.groundY);
+
+                // Player Snowman (The Thrower)
+                const pX = 80;
+                const pY = Physics.groundY;
+                this.ctx.fillStyle = '#FFF';
+                this.ctx.beginPath();
+                this.ctx.arc(pX, pY - 30, 30, 0, Math.PI * 2); // Base
+                this.ctx.arc(pX, pY - 70, 20, 0, Math.PI * 2); // Body
+                this.ctx.arc(pX, pY - 100, 15, 0, Math.PI * 2); // Head
+                this.ctx.fill();
+
+                // Hat
+                this.ctx.fillStyle = '#222';
+                this.ctx.fillRect(pX - 15, pY - 115, 30, 20);
+                this.ctx.fillRect(pX - 20, pY - 100, 40, 5);
+            }
+
+            drawAimLine() {
+                if (!this.isMouseDown && !('ontouchstart' in window)) return;
+
+                if (this.isMouseDown) {
+                    const startX = 100;
+                    const startY = this.height - 120;
+
+                    const dx = this.mouseX - startX;
+                    const dy = this.mouseY - startY;
+                    const POWER_SCALE = 0.04;
+                    const MAX_POWER = 25;
+                    let power = Math.sqrt(dx * dx + dy * dy) * POWER_SCALE;
+                    power = Math.min(power, MAX_POWER);
+                    const angle = Math.atan2(dy, dx);
+
+                    let vx = Math.cos(angle) * power;
+                    let vy = Math.sin(angle) * power;
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(startX, startY);
+
+                    let simX = startX;
+                    let simY = startY;
+
+                    // Simulate 30 steps
+                    for (let i = 0; i < 30; i++) {
+                        simX += vx;
+                        simY += vy;
+                        vy += Physics.gravity;
+                        this.ctx.lineTo(simX, simY);
+                        if (simY > Physics.groundY) break;
+                    }
+
+                    this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.setLineDash([5, 5]);
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+                }
+            }
+
+            loop() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+
+                this.drawEnvironment();
+
+                if (this.state === 'PLAYING') {
+                    this.drawAimLine();
+
+                    // Updates
+                    this.snowballs.forEach(s => s.update());
+                    this.snowballs = this.snowballs.filter(s => s.x < this.width && s.y < this.height + 50);
+
+                    // Draws
+                    this.snowballs.forEach(s => s.draw(this.ctx));
+
+                    // Logic
+                    // Collisions
+                    this.snowballs.forEach(s => {
+                        this.snowmen.forEach(m => {
+                            if (m.checkCollision(s)) {
+                                this.updateHUD();
+                            }
+                        });
+                    });
+                    this.snowballs = this.snowballs.filter(s => s.active);
+
+                    // Update Snowmen
+                    this.snowmen.forEach(s => s.draw(this.ctx));
+
+                    // Particles
+                    this.particles.forEach(p => {
+                        p.update();
+                        p.draw(this.ctx);
+                    });
+                    this.particles = this.particles.filter(p => p.life > 0);
+                }
+
+                requestAnimationFrame(() => this.loop());
+            }
+        }
+
+        // Start Game
+        const game = new Game();
+
+
+    </script>
+</body>
+
+</html>
+```

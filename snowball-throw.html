@@ -334,7 +334,7 @@
                 this.y = y;
                 this.vx = vx;
                 this.vy = vy;
-                this.radius = 8;
+                this.radius = 12; // Increased from 8
                 this.active = true;
                 this.history = []; // For trail effect
             }
@@ -394,9 +394,9 @@
 
                 // Snowman parts (stacked from bottom to top)
                 this.parts = [
-                    { id: 'base', r: 35, yOffset: -35, health: 1, color: '#FFF' },
-                    { id: 'body', r: 25, yOffset: -85, health: 1, color: '#FFF' },
-                    { id: 'head', r: 18, yOffset: -123, health: 1, color: '#FFF' }
+                    { id: 'base', r: 40, yOffset: -35, health: 1, color: '#FFF' }, // Increased from 35
+                    { id: 'body', r: 30, yOffset: -85, health: 1, color: '#FFF' }, // Increased from 25
+                    { id: 'head', r: 22, yOffset: -123, health: 1, color: '#FFF' } // Increased from 18
                 ];
             }
 
@@ -650,6 +650,8 @@
                 const rain = document.getElementById('emoji-rain');
                 if (rain) rain.remove();
 
+                // Gameplay adjustments for "Easier" mode
+                // Randomize positions but keep them hit-able
                 if (lvl === 'FREE') {
                     // Free Play: Generate random snowmen
                     for (let i = 0; i < 5; i++) {
@@ -661,8 +663,6 @@
                     // Handcrafted Levels
                     const layout = LEVELS[lvl];
                     layout.forEach(pos => {
-                        // Scale x position relative to screen width if needed, or just use raw pixels
-                        // Minimal responsive adjustment:
                         let x = pos.x;
                         if (this.width < 800) x = pos.x * 0.8;
                         this.snowmen.push(new Snowman(x, Physics.groundY));
@@ -751,6 +751,7 @@
             handleMouseDown(e) {
                 if (this.state !== 'PLAYING') return;
                 this.isMouseDown = true;
+                this.currentCharge = 5; // Reset charge on click start
             }
 
             handleMouseUp(e) {
@@ -765,7 +766,10 @@
                 const rect = this.canvas.getBoundingClientRect();
                 this.mouseX = touch.clientX - rect.left;
                 this.mouseY = touch.clientY - rect.top;
-                if (e.type === 'touchstart') this.isMouseDown = true;
+                if (e.type === 'touchstart') {
+                    this.isMouseDown = true;
+                    this.currentCharge = 5;
+                }
             }
 
             handleTouchEnd(e) {
@@ -776,25 +780,24 @@
 
             throwSnowball() {
                 const startX = 100;
-                const startY = this.height - 120; // Slightly higher than snowfort
+                const startY = this.height - 120;
 
-                // Aiming
+                // Vector aiming
                 const dx = this.mouseX - startX;
                 const dy = this.mouseY - startY;
-
-                // Power scaling
-                const POWER_SCALE = 0.04;
-                const MAX_POWER = 25;
-
-                let power = Math.sqrt(dx * dx + dy * dy) * POWER_SCALE;
-                power = Math.min(power, MAX_POWER);
-
                 const angle = Math.atan2(dy, dx);
+
+                // Use charged power
+                // Max charge increased to 35 for further reach
+                const power = this.currentCharge;
 
                 const vx = Math.cos(angle) * power;
                 const vy = Math.sin(angle) * power;
 
                 this.snowballs.push(new Snowball(startX, startY, vx, vy));
+
+                // Reset charge visual
+                this.currentCharge = 5;
             }
 
             drawEnvironment() {
@@ -823,6 +826,23 @@
                 this.ctx.fillStyle = '#222';
                 this.ctx.fillRect(pX - 15, pY - 115, 30, 20);
                 this.ctx.fillRect(pX - 20, pY - 100, 40, 5);
+
+                // Draw Charge Meter if charging
+                if (this.isMouseDown) {
+                    const barWidth = 60;
+                    const barHeight = 10;
+                    const bx = pX - barWidth / 2;
+                    const by = pY - 140; // Above head
+
+                    // Background
+                    this.ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                    this.ctx.fillRect(bx, by, barWidth, barHeight);
+
+                    // Fill (Green -> Red)
+                    const pct = (this.currentCharge - 5) / (35 - 5); // 5 to 35 range
+                    this.ctx.fillStyle = `hsl(${120 - pct * 120}, 100%, 50%)`;
+                    this.ctx.fillRect(bx + 1, by + 1, (barWidth - 2) * pct, barHeight - 2);
+                }
             }
 
             drawAimLine() {
@@ -834,11 +854,10 @@
 
                     const dx = this.mouseX - startX;
                     const dy = this.mouseY - startY;
-                    const POWER_SCALE = 0.04;
-                    const MAX_POWER = 25;
-                    let power = Math.sqrt(dx * dx + dy * dy) * POWER_SCALE;
-                    power = Math.min(power, MAX_POWER);
                     const angle = Math.atan2(dy, dx);
+
+                    // Use CURRENT charge for prediction
+                    let power = this.currentCharge;
 
                     let vx = Math.cos(angle) * power;
                     let vy = Math.sin(angle) * power;
@@ -849,8 +868,8 @@
                     let simX = startX;
                     let simY = startY;
 
-                    // Simulate 30 steps
-                    for (let i = 0; i < 30; i++) {
+                    // Simulate step by step
+                    for (let i = 0; i < 40; i++) { // Increased steps to see further
                         simX += vx;
                         simY += vy;
                         vy += Physics.gravity;
@@ -858,7 +877,7 @@
                         if (simY > Physics.groundY) break;
                     }
 
-                    this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                    this.ctx.strokeStyle = `rgba(255, ${255 - (this.currentCharge * 5)}, 0, 0.6)`; // Color shift with power
                     this.ctx.lineWidth = 3;
                     this.ctx.setLineDash([5, 5]);
                     this.ctx.stroke();
@@ -872,16 +891,23 @@
                 this.drawEnvironment();
 
                 if (this.state === 'PLAYING') {
+                    // Update Charge
+                    if (this.isMouseDown) {
+                        this.currentCharge += 0.4; // Charge rate
+                        if (this.currentCharge > 35) this.currentCharge = 35; // Cap at 35 (was 25 implied max)
+                    } else {
+                        // Ensure it resets if not holding (safety, primarily reset in mouseUp)
+                    }
+
                     this.drawAimLine();
 
                     // Updates
                     this.snowballs.forEach(s => s.update());
-                    this.snowballs = this.snowballs.filter(s => s.x < this.width && s.y < this.height + 50);
+                    this.snowballs = this.snowballs.filter(s => s.x < this.width + 100 && s.y < this.height + 50);
 
                     // Draws
                     this.snowballs.forEach(s => s.draw(this.ctx));
 
-                    // Logic
                     // Collisions
                     this.snowballs.forEach(s => {
                         this.snowmen.forEach(m => {
